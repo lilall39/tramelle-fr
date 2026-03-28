@@ -1,10 +1,16 @@
 export const siteName = "Tramelle";
 export const siteDomain = "tramelle.fr";
 
-/** URL canonique ; surcharger avec NEXT_PUBLIC_SITE_URL en prod (Vercel). */
+/**
+ * URL canonique (méta, sitemap, JSON-LD).
+ * - Production : définir NEXT_PUBLIC_SITE_URL=https://tramelle.fr sur Vercel.
+ * - Previews Vercel : sans variable, VERCEL_URL est utilisée automatiquement.
+ */
 export function getSiteUrl(): string {
-  const env = process.env.NEXT_PUBLIC_SITE_URL;
-  if (env?.startsWith("http")) return env.replace(/\/$/, "");
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit?.startsWith("http")) return explicit.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
   return `https://${siteDomain}`;
 }
 
