@@ -1,4 +1,6 @@
 import { PageContainer } from "@/components/layout/page-container";
+import { EmbeddedTool } from "@/components/tools/embedded-tool";
+import { SurConsigneIntro } from "@/components/tools/sur-consigne-intro";
 import { ToolShell } from "@/components/tools/tool-shell";
 import { PercentageTool } from "@/components/tools/percentage-tool";
 import { WhitespaceTool } from "@/components/tools/whitespace-tool";
@@ -29,6 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function ToolBody({ slug }: { slug: string }) {
+  const outil = getOutilBySlug(slug);
+  if (!outil) return null;
+  if (outil.embedUrl) {
+    return <EmbeddedTool src={outil.embedUrl} title={outil.title} />;
+  }
   switch (slug) {
     case "compteur-de-mots":
       return <WordCounterTool />;
@@ -49,6 +56,8 @@ export default async function OutilPage({ params }: Props) {
   const body = ToolBody({ slug });
   if (!body) notFound();
 
+  const isEmbedded = Boolean(outil.embedUrl);
+
   return (
     <PageContainer>
       <nav className="mb-10 text-sm text-ink/55" aria-label="Fil d’Ariane">
@@ -64,13 +73,23 @@ export default async function OutilPage({ params }: Props) {
           <li className="text-ink/80">{outil.title}</li>
         </ol>
       </nav>
-      <ToolShell title={outil.title} description={outil.description}>
+      <ToolShell
+        title={outil.title}
+        description={outil.slug === "sur-consigne" ? <SurConsigneIntro /> : outil.description}
+      >
         {body}
       </ToolShell>
-      <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
-        Astuce : ces outils fonctionnent entièrement dans votre navigateur. Rien n’est envoyé sur un serveur — pratique
-        pour un brouillon, un mail, une note rapide.
-      </p>
+      {isEmbedded ? (
+        <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
+          L’outil Sur consigne s’exécute sur un serveur distant (hébergement séparé). Les temps de réponse au premier chargement
+          dépendent de ce service — les outils 100 % dans le navigateur, eux, restent instantanés sur Tramelle.
+        </p>
+      ) : (
+        <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
+          Astuce : ces outils fonctionnent entièrement dans votre navigateur. Rien n’est envoyé sur un serveur — pratique
+          pour un brouillon, un mail, une note rapide.
+        </p>
+      )}
     </PageContainer>
   );
 }

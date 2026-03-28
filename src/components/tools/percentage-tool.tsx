@@ -45,7 +45,7 @@ export function PercentageTool() {
             inputMode="decimal"
             value={a}
             onChange={(e) => setA(e.target.value)}
-            className="w-full rounded-xl border border-ink/15 bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/25"
+            className="w-full rounded-xl border border-ink/[0.12] bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-accent/55 focus:outline-none focus:ring-2 focus:ring-accent/15"
             placeholder="ex. 120"
           />
         </div>
@@ -58,16 +58,16 @@ export function PercentageTool() {
             inputMode="decimal"
             value={b}
             onChange={(e) => setB(e.target.value)}
-            className="w-full rounded-xl border border-ink/15 bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/25"
+            className="w-full rounded-xl border border-ink/[0.12] bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-accent/55 focus:outline-none focus:ring-2 focus:ring-accent/15"
             placeholder="ex. 400"
           />
         </div>
       </div>
-      <div className="rounded-2xl border border-ink/10 bg-paper-muted/70 px-5 py-5">
+      <div className="rounded-2xl border border-ink/[0.08] bg-paper-muted/80 px-5 py-5">
         {!result ? (
           <p className="text-sm text-ink/55">Saisissez deux nombres pour voir le résultat.</p>
         ) : result.kind === "error" ? (
-          <p className="text-sm text-red-800/90">{result.message}</p>
+          <p className="text-sm text-terracotta">{result.message}</p>
         ) : (
           <ul className="space-y-2 text-sm leading-relaxed text-ink/85">
             {result.lines.map((line) => (

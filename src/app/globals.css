@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
+/*
+  Palette éditoriale (4 couleurs) — ton chaud, sans gris générique :
+  fond #F6F1E8 · texte #1F2421 · accent #2F4B43 · chaleur #8C6B5A
+  Surfaces dérivées : uniquement color-mix depuis ces teintes.
+*/
+
 :root {
   --background: var(--color-paper);
   --foreground: var(--color-ink);
 }
 
 @theme inline {
-  --color-paper: #f7f3ec;
-  --color-paper-elevated: #fdfaf6;
-  --color-paper-muted: #ebe4d8;
-  --color-ink: #1a1714;
-  --color-ink-muted: color-mix(in oklab, var(--color-ink) 58%, white);
-  --color-accent: #8b5a32;
-  --color-accent-strong: #5c3d24;
-  --color-sage: #4a5d4e;
-  --color-sage-muted: color-mix(in oklab, var(--color-sage) 75%, white);
-  --font-sans: var(--font-work), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-lora), ui-serif, "Iowan Old Style", Georgia, serif;
+  --color-paper: #f6f1e8;
+  --color-paper-elevated: color-mix(in oklab, #f6f1e8 76%, white);
+  --color-paper-muted: color-mix(in oklab, #f6f1e8 90%, #8c6b5a 10%);
+  --color-ink: #1f2421;
+  --color-accent: #2f4b43;
+  --color-terracotta: #8c6b5a;
+  /* Corps & UI : Jost · Titres : Prata · Mono : JetBrains (layout.tsx) */
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-prata), ui-serif, Georgia, serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-paper: #12100e;
-    --color-paper-elevated: #181614;
-    --color-paper-muted: #1e1b18;
-    --color-ink: #f2ebe3;
-    --color-ink-muted: color-mix(in oklab, var(--color-ink) 72%, black);
-    --color-accent: #c49a6c;
-    --color-accent-strong: #e8cfa8;
-    --color-sage: #8faa92;
-    --color-sage-muted: color-mix(in oklab, var(--color-sage) 65%, black);
+    --color-paper: color-mix(in oklab, #1f2421 76%, #2f4b43 24%);
+    --color-paper-elevated: color-mix(in oklab, #1f2421 68%, #2f4b43 32%);
+    --color-paper-muted: color-mix(in oklab, #1f2421 82%, #2f4b43 18%);
+    --color-ink: #f6f1e8;
+    --color-accent: color-mix(in oklab, #2f4b43 55%, #f6f1e8 45%);
+    --color-terracotta: color-mix(in oklab, #8c6b5a 58%, #f6f1e8 42%);
   }
 }
 
@@ -41,26 +42,31 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Grain très léger : évite le « flat » sans ressembler à un template. */
 body::before {
   content: "";
   pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: 0;
-  opacity: 0.035;
+  opacity: 0.024;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-body > * {
+/* Pas de position:relative sur <header> : sinon ça écrase position:sticky du bandeau. */
+body > *:not(header) {
   position: relative;
   z-index: 1;
 }
 
-::selection {
-  background: color-mix(in oklab, var(--color-accent) 38%, transparent);
+body > header {
+  z-index: 50;
 }
 
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 26%, transparent);
+}
+
+/* Titres : Prata (voir --font-prata dans layout.tsx) */
 .font-editorial-serif {
   font-family: var(--font-serif);
   font-feature-settings: "kern" 1, "liga" 1;

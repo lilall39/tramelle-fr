@@ -58,9 +58,9 @@ export default async function BilletPage({ params }: Props) {
             </li>
           </ol>
         </nav>
-        <header className="mb-12 max-w-2xl space-y-4 border-b border-ink/10 pb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-strong">Billet</p>
-          <h1 className="font-serif text-[2rem] font-medium leading-tight tracking-tight text-ink sm:text-4xl sm:leading-[1.08]">
+        <header className="mb-12 max-w-2xl space-y-4 border-b border-ink/[0.08] pb-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Billet</p>
+          <h1 className="font-editorial-serif text-[2rem] font-medium leading-tight tracking-tight text-ink sm:text-4xl sm:leading-[1.08]">
             {billet.title}
           </h1>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink/55">

@@ -29,7 +29,7 @@ export function WordCounterTool() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         rows={12}
-        className="w-full resize-y rounded-xl border border-ink/15 bg-paper px-4 py-3 font-mono text-sm leading-relaxed text-ink shadow-inner shadow-ink/[0.03] placeholder:text-ink/35 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/25"
+        className="w-full resize-y rounded-xl border border-ink/[0.12] bg-paper px-4 py-3 font-mono text-sm leading-relaxed text-ink shadow-inner shadow-ink/[0.02] placeholder:text-ink/35 focus:border-accent/55 focus:outline-none focus:ring-2 focus:ring-accent/15"
         placeholder="Collez ou rédigez ici…"
         spellCheck={false}
       />
@@ -45,7 +45,7 @@ export function WordCounterTool() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-ink/10 bg-paper-muted/80 px-4 py-3">
+    <div className="rounded-xl border border-ink/[0.08] bg-paper-muted/90 px-4 py-3">
       <dt className="text-xs font-semibold uppercase tracking-wider text-ink/45">{label}</dt>
       <dd className="mt-1 font-mono text-2xl tabular-nums text-ink">{value}</dd>
     </div>

@@ -74,7 +74,7 @@ export default function HomePage() {
           {articleUne ? (
             <section className="scroll-mt-28" aria-labelledby="une-title">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
-                <h2 id="une-title" className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-strong">
+                <h2 id="une-title" className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
                   À la une
                 </h2>
                 <p className="text-sm text-ink/45">Article le plus récent</p>
@@ -99,7 +99,7 @@ export default function HomePage() {
             description="Des utilitaires volontairement étroits : une fonction claire, zéro compte, zéro tableau de bord. Quand c’est fini, vous fermez l’onglet."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/outils" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                <Link href="/outils" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
                   Parcourir tous les outils
                 </Link>
               </p>
@@ -128,7 +128,7 @@ export default function HomePage() {
             description="Textes plus calibrés : méthode, recul, manière de voir le travail et le numérique. Ici, on prend le temps d’expliquer — sans vous traiter comme un profil à optimiser."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/articles" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                <Link href="/articles" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
                   Tous les articles
                 </Link>
               </p>
@@ -160,7 +160,7 @@ export default function HomePage() {
             description="Plus courts, plus directs : fragments d’expérience, opinions, coulisses. Ce n’est pas la rubrique des vérités définitives — plutôt des instantanés honnêtes."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/billets" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                <Link href="/billets" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
                   Tous les billets
                 </Link>
               </p>

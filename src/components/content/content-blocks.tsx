@@ -16,7 +16,7 @@ export function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
             return (
               <h2
                 key={key}
-                className="font-serif text-2xl font-medium tracking-tight text-ink sm:text-[1.65rem]"
+                className="font-editorial-serif text-2xl font-medium tracking-tight text-ink sm:text-[1.65rem]"
               >
                 {b.text}
               </h2>
@@ -25,7 +25,7 @@ export function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
             return (
               <h3
                 key={key}
-                className="font-sans text-lg font-semibold tracking-tight text-ink"
+                className="font-editorial-serif text-xl font-medium tracking-tight text-ink"
               >
                 {b.text}
               </h3>
@@ -45,7 +45,7 @@ export function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
             return (
               <blockquote
                 key={key}
-                className="border-l-2 border-accent/50 pl-5 font-serif text-lg italic leading-relaxed text-ink/85"
+                className="border-l-2 border-terracotta/45 pl-5 font-sans text-lg italic leading-relaxed text-ink/88"
               >
                 {b.text}
               </blockquote>

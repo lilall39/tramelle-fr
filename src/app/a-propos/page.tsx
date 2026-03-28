@@ -26,7 +26,7 @@ export default function AboutPage() {
         </p>
         <p>
           Les{" "}
-          <Link href="/outils" className="font-medium underline-offset-4 hover:underline">
+          <Link href="/outils" className="font-medium text-ink underline-offset-4 transition-colors hover:text-accent hover:underline">
             outils
           </Link>{" "}
           sont pensés pour rester simples : pas de compte, pas de collecte inutile de données côté navigateur au-delà de
@@ -34,11 +34,11 @@ export default function AboutPage() {
         </p>
         <p>
           Les{" "}
-          <Link href="/articles" className="font-medium underline-offset-4 hover:underline">
+          <Link href="/articles" className="font-medium text-ink underline-offset-4 transition-colors hover:text-accent hover:underline">
             articles
           </Link>{" "}
           explorent des sujets plus larges (attention, habitudes, manière de travailler avec le web). Les{" "}
-          <Link href="/billets" className="font-medium underline-offset-4 hover:underline">
+          <Link href="/billets" className="font-medium text-ink underline-offset-4 transition-colors hover:text-accent hover:underline">
             billets
           </Link>{" "}
           sont plus subjectifs : notes d’atelier, opinions, fragments d’expérience.

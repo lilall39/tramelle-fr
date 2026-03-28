@@ -17,26 +17,26 @@ export function ContentCard({
 }: Props) {
   const shell =
     variant === "featured"
-      ? "group relative block overflow-hidden rounded-2xl border border-ink/10 bg-paper-elevated p-8 shadow-md shadow-ink/[0.06] transition-[border-color,box-shadow] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-accent/80 hover:border-accent/40 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-strong dark:shadow-black/20"
-      : "group block rounded-2xl border border-ink/10 bg-paper p-6 shadow-sm shadow-ink/5 transition-[border-color,box-shadow,transform] hover:border-accent/35 hover:shadow-md hover:shadow-ink/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-strong";
+      ? "group relative block overflow-hidden rounded-2xl border border-ink/[0.08] bg-paper-elevated p-8 shadow-sm shadow-ink/[0.04] transition-[border-color,box-shadow] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-accent hover:border-accent/35 hover:shadow-md hover:shadow-ink/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      : "group block rounded-2xl border border-ink/[0.08] bg-paper p-6 shadow-sm shadow-ink/[0.03] transition-[border-color,box-shadow] hover:border-accent/30 hover:shadow-md hover:shadow-ink/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
   return (
     <Link href={href} className={shell}>
       {meta ? (
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/45">
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/42">
           {meta}
         </p>
       ) : null}
       <h3
         className={
           variant === "featured"
-            ? "font-editorial-serif text-2xl font-medium leading-snug tracking-tight text-ink group-hover:text-accent-strong sm:text-[1.75rem]"
+            ? "font-editorial-serif text-2xl font-medium leading-snug tracking-tight text-ink group-hover:text-accent sm:text-[1.75rem]"
             : variant === "compact"
-              ? "font-editorial-serif text-xl font-medium tracking-tight text-ink group-hover:text-accent-strong"
-              : "font-editorial-serif text-xl font-medium tracking-tight text-ink group-hover:text-accent-strong sm:text-[1.35rem]"
+              ? "font-editorial-serif text-xl font-medium tracking-tight text-ink group-hover:text-accent"
+              : "font-editorial-serif text-xl font-medium tracking-tight text-ink group-hover:text-accent sm:text-[1.35rem]"
         }
       >
-        <span className="underline decoration-ink/15 decoration-1 underline-offset-[0.28em] transition-[text-decoration-color] group-hover:decoration-accent/50">
+        <span className="underline decoration-ink/[0.12] decoration-1 underline-offset-[0.28em] transition-[text-decoration-color] group-hover:decoration-accent/45">
           {title}
         </span>
       </h3>

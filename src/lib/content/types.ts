@@ -37,4 +37,6 @@ export type OutilMeta = {
   description: string;
   publishedAt: string;
   tags: string[];
+  /** Si défini, l’outil est affiché dans une iframe (hébergement externe). */
+  embedUrl?: string;
 };

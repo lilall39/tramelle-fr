@@ -64,9 +64,9 @@ export default async function ArticlePage({ params }: Props) {
             </li>
           </ol>
         </nav>
-        <header className="mb-12 max-w-3xl space-y-5 border-b border-ink/10 pb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-strong">Article</p>
-          <h1 className="font-serif text-[2.1rem] font-medium leading-tight tracking-tight text-ink sm:text-5xl sm:leading-[1.06]">
+        <header className="mb-12 max-w-3xl space-y-5 border-b border-ink/[0.08] pb-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Article</p>
+          <h1 className="font-editorial-serif text-[2.1rem] font-medium leading-tight tracking-tight text-ink sm:text-5xl sm:leading-[1.06]">
             {article.title}
           </h1>
           <p className="text-xl leading-relaxed text-ink/75 sm:text-[1.35rem]">{article.deck}</p>
@@ -80,7 +80,7 @@ export default async function ArticlePage({ params }: Props) {
               {article.tags.map((t) => (
                 <li
                   key={t}
-                  className="rounded-full border border-ink/10 bg-paper-muted/80 px-3 py-1 text-xs font-medium text-ink/65"
+                  className="rounded-full border border-ink/[0.08] bg-paper-muted/90 px-3 py-1 text-xs font-medium text-ink/65"
                 >
                   {t}
                 </li>

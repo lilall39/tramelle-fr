@@ -3,6 +3,18 @@ import type { OutilMeta } from "./types";
 export const outils: OutilMeta[] = [
   {
     kind: "outil",
+    slug: "sur-consigne",
+    title: "Sur consigne",
+    tagline:
+      "Tu lui donnes une consigne, il s’adapte. Corriger, rédiger, poésie, dissertation, traduire, répondre à une question, expliquer un sujet ou développer une idée — selon ce que vous lui demandez.",
+    description:
+      "Écris ta demande, deux-points, puis tes mots (poésie :, traduis :, dissertation…). Relecture, traduction, réponses : l’outil suit ta consigne. Hébergé séparément ; premier chargement parfois lent.",
+    publishedAt: "2026-03-28",
+    tags: ["texte", "rédaction"],
+    embedUrl: "https://mon-correcteur.onrender.com/",
+  },
+  {
+    kind: "outil",
     slug: "compteur-de-mots",
     title: "Compteur de mots",
     tagline: "Compter mots et caractères, sans quitter la page.",

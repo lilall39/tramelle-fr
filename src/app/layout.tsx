@@ -1,19 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Lora, Work_Sans } from "next/font/google";
+import { JetBrains_Mono, Jost, Prata } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { brand, getSiteUrl, siteName } from "@/lib/site";
 import "./globals.css";
 
-const lora = Lora({
+const prata = Prata({
+  weight: "400",
   subsets: ["latin"],
-  variable: "--font-lora",
+  variable: "--font-prata",
   display: "swap",
 });
 
-const workSans = Work_Sans({
+const jost = Jost({
   subsets: ["latin"],
-  variable: "--font-work",
+  variable: "--font-jost",
   display: "swap",
 });
 
@@ -27,8 +28,8 @@ const siteUrl = getSiteUrl();
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf8f4" },
-    { media: "(prefers-color-scheme: dark)", color: "#141210" },
+    { media: "(prefers-color-scheme: light)", color: "#F6F1E8" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c2320" },
   ],
 };
 
@@ -65,12 +66,12 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${lora.variable} ${workSans.variable} ${jetbrainsMono.variable} h-full scroll-smooth antialiased`}
+      className={`${prata.variable} ${jost.variable} ${jetbrainsMono.variable} h-full scroll-smooth antialiased`}
     >
       <body className="flex min-h-full flex-col bg-paper text-ink">
         <a
           href="#contenu-principal"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-accent-strong"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-accent"
         >
           Aller au contenu
         </a>

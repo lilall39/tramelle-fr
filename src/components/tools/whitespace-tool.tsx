@@ -28,7 +28,7 @@ export function WhitespaceTool() {
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           rows={10}
-          className="w-full resize-y rounded-xl border border-ink/15 bg-paper px-4 py-3 font-mono text-sm leading-relaxed text-ink shadow-inner shadow-ink/[0.03] placeholder:text-ink/35 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/25"
+          className="w-full resize-y rounded-xl border border-ink/[0.12] bg-paper px-4 py-3 font-mono text-sm leading-relaxed text-ink shadow-inner shadow-ink/[0.02] placeholder:text-ink/35 focus:border-accent/55 focus:outline-none focus:ring-2 focus:ring-accent/15"
           placeholder="Collage depuis PDF, mail, tableur…"
           spellCheck={false}
         />
@@ -44,7 +44,7 @@ export function WhitespaceTool() {
               void navigator.clipboard.writeText(cleaned);
             }}
             disabled={!cleaned}
-            className="rounded-full border border-ink/15 bg-paper px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink/80 transition-colors hover:border-accent/40 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full border border-ink/[0.12] bg-paper px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink/80 transition-colors hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
           >
             Copier
           </button>
@@ -54,7 +54,7 @@ export function WhitespaceTool() {
           readOnly
           value={cleaned}
           rows={10}
-          className="w-full resize-y rounded-xl border border-dashed border-ink/20 bg-paper-muted/50 px-4 py-3 font-mono text-sm leading-relaxed text-ink/90"
+          className="w-full resize-y rounded-xl border border-dashed border-ink/[0.12] bg-paper-muted/70 px-4 py-3 font-mono text-sm leading-relaxed text-ink/90"
         />
       </div>
     </div>

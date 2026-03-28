@@ -10,15 +10,11 @@ const sommaire = [
 export function HomeHero() {
   return (
     <section
-      className="relative overflow-hidden border-b border-ink/10 bg-gradient-to-br from-paper-elevated via-paper to-paper-muted/40 px-5 py-14 sm:px-8 sm:py-20 dark:from-paper-elevated dark:via-paper dark:to-paper-muted/30"
+      className="relative border-b border-ink/[0.08] bg-paper-elevated px-5 py-14 sm:px-8 sm:py-20"
       aria-labelledby="hero-title"
     >
-      <div
-        className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-accent/[0.07] blur-3xl dark:bg-accent/[0.12]"
-        aria-hidden
-      />
       <div className="relative mx-auto max-w-6xl">
-        <p className="font-editorial-serif text-sm font-medium italic text-sage dark:text-sage-muted">
+        <p className="text-sm font-medium italic text-terracotta/85">
           {brand.kicker} — {brand.subtitle}
         </p>
         <h1
@@ -31,20 +27,20 @@ export function HomeHero() {
           {brand.heroLead}
         </p>
 
-        <div className="mt-12 flex flex-col gap-6 border-t border-ink/10 pt-10 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mt-12 flex flex-col gap-6 border-t border-ink/[0.08] pt-10 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-strong">{brand.sommaireLabel}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">{brand.sommaireLabel}</p>
             <ul className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-3">
               {sommaire.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="group inline-flex items-baseline gap-2 text-ink transition-colors hover:text-accent-strong"
+                    className="group inline-flex items-baseline gap-2 text-ink transition-colors hover:text-accent"
                   >
                     <span className="font-mono text-xs tabular-nums text-ink/35 group-hover:text-accent">
                       {item.num}
                     </span>
-                    <span className="font-medium underline decoration-ink/15 underline-offset-[0.25em] transition-[text-decoration-color] group-hover:decoration-accent/60">
+                    <span className="font-medium underline decoration-ink/[0.12] underline-offset-[0.25em] transition-[text-decoration-color] group-hover:decoration-accent/55">
                       {item.label}
                     </span>
                     <span className="text-sm text-ink/45">— {item.hint}</span>
