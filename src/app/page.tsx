@@ -1,65 +1,187 @@
-import Image from "next/image";
+import { EditorialSection } from "@/components/home/editorial-section";
+import { HomeHero } from "@/components/home/home-hero";
+import { PageContainer } from "@/components/layout/page-container";
+import { ContentCard } from "@/components/ui/content-card";
+import { JsonLd } from "@/components/seo/json-ld";
+import { articles } from "@/lib/content/articles";
+import { billets } from "@/lib/content/billets";
+import { outils } from "@/lib/content/outils";
+import { brand, getSiteUrl, siteName } from "@/lib/site";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Accueil",
+  description:
+    "Tramelle : outils minuscules, articles de fond et billets personnels en français — la revue de l’utile, sans bruit ni tableau de bord.",
+  alternates: { canonical: "/" },
+};
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
+function billetTeaser(blocks: (typeof billets)[0]["blocks"]): string {
+  const first = blocks.find((b) => b.type === "p");
+  if (!first || first.type !== "p") return "";
+  const text = first.text;
+  return text.length <= 190 ? text : text.slice(0, 187).trimEnd() + "…";
+}
+
+export default function HomePage() {
+  const siteUrl = getSiteUrl();
+  const articlesSorted = [...articles].sort(
+    (x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime(),
+  );
+  const [articleUne, ...autresArticles] = articlesSorted;
+
+  const billetsSorted = [...billets].sort(
+    (x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime(),
+  );
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: siteName,
+        description: brand.heroLead,
+        inLanguage: "fr-FR",
+        publisher: { "@id": `${siteUrl}/#org` },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#org`,
+        name: siteName,
+        url: siteUrl,
+        slogan: brand.subtitle,
+      },
+    ],
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <JsonLd data={jsonLd} />
+      <HomeHero />
+      <PageContainer className="pt-14 sm:pt-20">
+        <div className="space-y-28 sm:space-y-36">
+          {articleUne ? (
+            <section className="scroll-mt-28" aria-labelledby="une-title">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
+                <h2 id="une-title" className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-strong">
+                  À la une
+                </h2>
+                <p className="text-sm text-ink/45">Article le plus récent</p>
+              </div>
+              <div className="mt-6">
+                <ContentCard
+                  href={`/articles/${articleUne.slug}`}
+                  title={articleUne.title}
+                  meta={`${formatDate(articleUne.publishedAt)} · ${articleUne.readingMinutes} min de lecture`}
+                  description={articleUne.deck}
+                  variant="featured"
+                />
+              </div>
+            </section>
+          ) : null}
+
+          <EditorialSection
+            id="outils"
+            number="01"
+            eyebrow="Pratique immédiate"
+            title="Outils"
+            description="Des utilitaires volontairement étroits : une fonction claire, zéro compte, zéro tableau de bord. Quand c’est fini, vous fermez l’onglet."
+            footer={
+              <p className="text-sm text-ink/50">
+                <Link href="/outils" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                  Parcourir tous les outils
+                </Link>
+              </p>
+            }
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {outils.map((o) => (
+                <li key={o.slug}>
+                  <ContentCard
+                    href={`/outils/${o.slug}`}
+                    title={o.title}
+                    meta="Outil"
+                    description={o.tagline}
+                    variant="compact"
+                  />
+                </li>
+              ))}
+            </ul>
+          </EditorialSection>
+
+          <EditorialSection
+            id="articles"
+            number="02"
+            eyebrow="Long format"
+            title="Articles"
+            description="Textes plus calibrés : méthode, recul, manière de voir le travail et le numérique. Ici, on prend le temps d’expliquer — sans vous traiter comme un profil à optimiser."
+            footer={
+              <p className="text-sm text-ink/50">
+                <Link href="/articles" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                  Tous les articles
+                </Link>
+              </p>
+            }
           >
-            Documentation
-          </a>
+            {autresArticles.length ? (
+              <ul className="grid gap-5 lg:grid-cols-2">
+                {autresArticles.map((a) => (
+                  <li key={a.slug}>
+                    <ContentCard
+                      href={`/articles/${a.slug}`}
+                      title={a.title}
+                      meta={`${formatDate(a.publishedAt)} · ${a.readingMinutes} min`}
+                      description={a.deck}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-ink/55">D’autres textes arrivent bientôt.</p>
+            )}
+          </EditorialSection>
+
+          <EditorialSection
+            id="billets"
+            number="03"
+            eyebrow="Notes & voix"
+            title="Billets"
+            description="Plus courts, plus directs : fragments d’expérience, opinions, coulisses. Ce n’est pas la rubrique des vérités définitives — plutôt des instantanés honnêtes."
+            footer={
+              <p className="text-sm text-ink/50">
+                <Link href="/billets" className="font-medium text-ink/75 underline-offset-4 hover:underline">
+                  Tous les billets
+                </Link>
+              </p>
+            }
+          >
+            <ul className="grid gap-5 lg:grid-cols-2">
+              {billetsSorted.map((b) => (
+                <li key={b.slug}>
+                  <ContentCard
+                    href={`/billets/${b.slug}`}
+                    title={b.title}
+                    meta={`${formatDate(b.publishedAt)}${b.mood ? ` · ${b.mood}` : ""}`}
+                    description={billetTeaser(b.blocks)}
+                    variant="compact"
+                  />
+                </li>
+              ))}
+            </ul>
+          </EditorialSection>
         </div>
-      </main>
-    </div>
+      </PageContainer>
+    </>
   );
 }

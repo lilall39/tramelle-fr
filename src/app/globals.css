@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: #f7f3ec;
+  --color-paper-elevated: #fdfaf6;
+  --color-paper-muted: #ebe4d8;
+  --color-ink: #1a1714;
+  --color-ink-muted: color-mix(in oklab, var(--color-ink) 58%, white);
+  --color-accent: #8b5a32;
+  --color-accent-strong: #5c3d24;
+  --color-sage: #4a5d4e;
+  --color-sage-muted: color-mix(in oklab, var(--color-sage) 75%, white);
+  --font-sans: var(--font-work), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), ui-serif, "Iowan Old Style", Georgia, serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-paper: #12100e;
+    --color-paper-elevated: #181614;
+    --color-paper-muted: #1e1b18;
+    --color-ink: #f2ebe3;
+    --color-ink-muted: color-mix(in oklab, var(--color-ink) 72%, black);
+    --color-accent: #c49a6c;
+    --color-accent-strong: #e8cfa8;
+    --color-sage: #8faa92;
+    --color-sage-muted: color-mix(in oklab, var(--color-sage) 65%, black);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+/* Grain très léger : évite le « flat » sans ressembler à un template. */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 38%, transparent);
+}
+
+.font-editorial-serif {
+  font-family: var(--font-serif);
+  font-feature-settings: "kern" 1, "liga" 1;
 }
