@@ -2,7 +2,6 @@ import { PageContainer } from "@/components/layout/page-container";
 import { EmbeddedTool } from "@/components/tools/embedded-tool";
 import { ExternalToolLinkout } from "@/components/tools/external-tool-linkout";
 import { CataloguePromptsIntro } from "@/components/tools/catalogue-prompts-intro";
-import { SurConsigneIntro } from "@/components/tools/sur-consigne-intro";
 import { ToolShell } from "@/components/tools/tool-shell";
 import { PercentageTool } from "@/components/tools/percentage-tool";
 import { VatCalculatorTool } from "@/components/tools/vat-calculator-tool";
@@ -85,9 +84,7 @@ export default async function OutilPage({ params }: Props) {
       <ToolShell
         title={outil.title}
         description={
-          outil.slug === "sur-consigne" ? (
-            <SurConsigneIntro />
-          ) : outil.slug === "catalogue-prompts-ia" ? (
+          outil.slug === "catalogue-prompts-ia" ? (
             <CataloguePromptsIntro />
           ) : (
             outil.description
@@ -98,8 +95,8 @@ export default async function OutilPage({ params }: Props) {
       </ToolShell>
       {isEmbedded ? (
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
-          L’outil Sur consigne s’exécute sur un serveur distant (hébergement séparé). Les temps de réponse au premier chargement
-          dépendent de ce service — les outils 100 % dans le navigateur, eux, restent instantanés sur Tramelle.
+          Cet outil est affiché dans un cadre fourni par un service externe : disponibilité et temps de premier chargement
+          dépendent de ce service.
         </p>
       ) : isExternal ? (
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
