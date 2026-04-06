@@ -3,15 +3,24 @@ import type { OutilMeta } from "./types";
 export const outils: OutilMeta[] = [
   {
     kind: "outil",
+    slug: "correcteur-de-texte",
+    title: "Correcteur de texte",
+    tagline: "Collez un texte : proposition de corrections orthographiques et grammaticales en français.",
+    description:
+      "Même principe que l’ancien outil hébergé sur Render : vous saisissez du texte, vous lancez la correction, vous récupérez une version proposée. Le traitement passe par LanguageTool (service public) depuis les serveurs Tramelle — rien n’est stocké.",
+    publishedAt: "2026-04-06",
+    tags: ["texte", "rédaction"],
+  },
+  {
+    kind: "outil",
     slug: "sur-consigne",
     title: "Sur consigne",
     tagline:
       "Vous lui donnez une consigne, il s’adapte. Corriger, rédiger, poésie, dissertation, traduire, expliquer un sujet ou développer une idée — selon ce que vous lui demandez.",
     description:
-      "Écris ta demande, deux-points, puis tes mots (poésie :, traduis :, dissertation…). Relecture, traduction, réponses : l’outil suit ta consigne. Hébergé séparément ; premier chargement parfois lent.",
+      "Écris ta demande, deux-points, puis tes mots (poésie :, traduis :, dissertation…). La correction orthographique du bloc ci-dessous reprend le moteur du correcteur Tramelle ; les autres modes (rédaction libre selon consigne) pourront s’enrichir plus tard.",
     publishedAt: "2026-03-28",
     tags: ["texte", "rédaction"],
-    embedUrl: "https://mon-correcteur.onrender.com/",
   },
   {
     kind: "outil",

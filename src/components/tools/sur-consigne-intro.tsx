@@ -17,8 +17,8 @@ export function SurConsigneIntro() {
         </ul>
       </div>
       <p className="text-xs font-bold leading-relaxed text-terracotta">
-        Relecture, rédaction, traduction, explication, calculs… l’outil s’ajuste à ta consigne. L’interface est hébergée
-        séparément ; le premier chargement peut être lent si le serveur était en veille.
+        Relecture, rédaction, traduction, explication, calculs… l’outil s’ajuste à ta consigne. La zone de correction
+        ci-dessous tourne sur Tramelle (LanguageTool).
       </p>
     </div>
   );
