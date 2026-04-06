@@ -6,7 +6,6 @@ import { SurConsigneIntro } from "@/components/tools/sur-consigne-intro";
 import { ToolShell } from "@/components/tools/tool-shell";
 import { PercentageTool } from "@/components/tools/percentage-tool";
 import { VatCalculatorTool } from "@/components/tools/vat-calculator-tool";
-import { TextCorrectorTool } from "@/components/tools/text-corrector-tool";
 import { WhitespaceTool } from "@/components/tools/whitespace-tool";
 import { WordCounterTool } from "@/components/tools/word-counter-tool";
 import { getAllOutilSlugs, getOutilBySlug } from "@/lib/content/outils";
@@ -44,9 +43,6 @@ function ToolBody({ slug }: { slug: string }) {
     return <ExternalToolLinkout href={outil.externalUrl} title={outil.title} />;
   }
   switch (slug) {
-    case "correcteur-de-texte":
-    case "sur-consigne":
-      return <TextCorrectorTool />;
     case "compteur-de-mots":
       return <WordCounterTool />;
     case "nettoyer-espaces":
@@ -70,7 +66,6 @@ export default async function OutilPage({ params }: Props) {
 
   const isEmbedded = Boolean(outil.embedUrl);
   const isExternal = Boolean(outil.externalUrl);
-  const usesCorrecteurApi = outil.slug === "correcteur-de-texte" || outil.slug === "sur-consigne";
 
   return (
     <PageContainer>
@@ -110,11 +105,6 @@ export default async function OutilPage({ params }: Props) {
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
           Ce renvoi mène vers un site tiers : contenu, disponibilité et conditions d’usage dépendent de son auteur. Tramelle
           n’héberge pas ce catalogue et ne collecte rien lorsque vous suivez le lien.
-        </p>
-      ) : usesCorrecteurApi ? (
-        <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
-          Le texte est transmis au serveur Tramelle pour être analysé par LanguageTool (orthographe / grammaire). Rien n’est
-          conservé après la réponse ; évitez d’y coller des données ultra-sensibles.
         </p>
       ) : (
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
