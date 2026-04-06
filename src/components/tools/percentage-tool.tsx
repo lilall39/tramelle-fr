@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+type ResultLine = { label: string; text: string };
+
 function parseNum(s: string): number | null {
   const t = s.trim().replace(",", ".");
   if (t === "" || t === "-" || t === "+") return null;
@@ -22,13 +24,28 @@ export function PercentageTool() {
     if (na === 0) {
       return {
         kind: "ok" as const,
-        lines: [`A représente 0 % de B.`],
+        lines: [
+          {
+            label: "Proportion (part de A dans B)",
+            text: "A représente 0 % de B.",
+          },
+          {
+            label: "Variation en passant de A à B",
+            text: "non calculable : quand A vaut 0, la variation en % par rapport à A n’a pas de sens.",
+          },
+        ],
       };
     }
     const delta = ((nb - na) / na) * 100;
-    const lines = [
-      `A représente ${formatFr(partOf)} % de B.`,
-      `Passer de A à B : variation de ${formatFr(delta)} % par rapport à A.`,
+    const lines: ResultLine[] = [
+      {
+        label: "Proportion (part de A dans B)",
+        text: `A représente ${formatFr(partOf)} % de B.`,
+      },
+      {
+        label: "Variation en passant de A à B",
+        text: `Écart de ${formatFr(delta)} % par rapport à A (hausse si B est plus grand que A, baisse sinon).`,
+      },
     ];
     return { kind: "ok" as const, lines };
   }, [a, b]);
@@ -65,21 +82,26 @@ export function PercentageTool() {
       </div>
       <div className="rounded-2xl border border-ink/[0.08] bg-paper-muted/80 px-5 py-5">
         {!result ? (
-          <p className="text-sm text-ink/55">Saisissez deux nombres pour voir le résultat.</p>
+          <p className="text-sm text-ink/55">
+            Saisissez A et B : l’encadré affichera le bloc Proportion (part de A dans B), puis le bloc Variation en
+            passant de A à B — les mêmes titres que sur les résultats.
+          </p>
         ) : result.kind === "error" ? (
-          <p className="text-sm text-terracotta">{result.message}</p>
+          <p className="text-sm font-bold text-terracotta">{result.message}</p>
         ) : (
-          <ul className="space-y-2 text-sm leading-relaxed text-ink/85">
-            {result.lines.map((line) => (
-              <li key={line}>{line}</li>
+          <ul className="space-y-4 text-sm leading-relaxed text-ink/85">
+            {result.lines.map((row, i) => (
+              <li key={`${row.label}-${i}`} className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-terracotta/90">{row.label}</p>
+                <p className="text-ink/90">{row.text}</p>
+              </li>
             ))}
           </ul>
         )}
       </div>
-      <p className="text-xs leading-relaxed text-ink/50">
-        Interprétation : « A est quelle part de B ? » et « si A est l’ancienne valeur et B la nouvelle, de combien
-        cela varie-t-il en pourcentage ? » — pensez à vérifier le sens métier si vous comparez des stocks ou des
-        taux.
+      <p className="text-sm font-bold leading-relaxed text-terracotta">
+        Rappel : « Proportion » = A par rapport à B ; « Variation… » = écart en % quand on va de A à B. À adapter
+        selon votre cas (stocks, taux, etc.).
       </p>
     </div>
   );

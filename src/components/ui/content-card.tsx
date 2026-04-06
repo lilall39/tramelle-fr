@@ -6,6 +6,8 @@ type Props = {
   meta?: string;
   description: string;
   variant?: "default" | "compact" | "featured";
+  /** Méta + accroche plus lisibles (ex. grille outils) */
+  strongTeaser?: boolean;
 };
 
 export function ContentCard({
@@ -14,6 +16,7 @@ export function ContentCard({
   meta,
   description,
   variant = "default",
+  strongTeaser = false,
 }: Props) {
   const shell =
     variant === "featured"
@@ -23,7 +26,13 @@ export function ContentCard({
   return (
     <Link href={href} className={shell}>
       {meta ? (
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/42">
+        <p
+          className={
+            strongTeaser
+              ? "mb-2 text-sm font-bold uppercase tracking-[0.18em] text-terracotta"
+              : "mb-2 text-xs font-bold uppercase tracking-[0.18em] text-terracotta/90"
+          }
+        >
           {meta}
         </p>
       ) : null}
@@ -44,7 +53,9 @@ export function ContentCard({
         className={
           variant === "featured"
             ? "mt-4 text-base leading-relaxed text-ink/75"
-            : "mt-3 text-sm leading-relaxed text-ink/70"
+            : strongTeaser
+              ? "mt-3 text-base font-bold leading-relaxed text-ink"
+              : "mt-3 text-sm leading-relaxed text-ink/70"
         }
       >
         {description}

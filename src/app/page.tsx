@@ -74,10 +74,10 @@ export default function HomePage() {
           {articleUne ? (
             <section className="scroll-mt-28" aria-labelledby="une-title">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
-                <h2 id="une-title" className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+                <h2 id="une-title" className="text-xs font-bold uppercase tracking-[0.22em] text-terracotta">
                   À la une
                 </h2>
-                <p className="text-sm text-ink/45">Article le plus récent</p>
+                <p className="text-base font-bold text-ink">Article le plus récent</p>
               </div>
               <div className="mt-6">
                 <ContentCard
@@ -99,7 +99,7 @@ export default function HomePage() {
             description="Des utilitaires volontairement étroits : une fonction claire, zéro compte, zéro tableau de bord. Quand c’est fini, vous fermez l’onglet."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/outils" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
+                <Link href="/outils" className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline">
                   Parcourir tous les outils
                 </Link>
               </p>
@@ -114,6 +114,7 @@ export default function HomePage() {
                     meta="Outil"
                     description={o.tagline}
                     variant="compact"
+                    strongTeaser
                   />
                 </li>
               ))}
@@ -128,7 +129,7 @@ export default function HomePage() {
             description="Textes plus calibrés : méthode, recul, manière de voir le travail et le numérique. Ici, on prend le temps d’expliquer — sans vous traiter comme un profil à optimiser."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/articles" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
+                <Link href="/articles" className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline">
                   Tous les articles
                 </Link>
               </p>
@@ -160,7 +161,7 @@ export default function HomePage() {
             description="Plus courts, plus directs : fragments d’expérience, opinions, coulisses. Ce n’est pas la rubrique des vérités définitives — plutôt des instantanés honnêtes."
             footer={
               <p className="text-sm text-ink/50">
-                <Link href="/billets" className="font-medium text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">
+                <Link href="/billets" className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline">
                   Tous les billets
                 </Link>
               </p>
@@ -179,6 +180,36 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
+          </EditorialSection>
+
+          <EditorialSection
+            id="offres-et-services"
+            number="04"
+            eyebrow="Petites annonces"
+            title="Offres et recherche services"
+            description="Annonces, services, ventes, dons et articles — publiés après modération, sans afficher vos coordonnées privées sur les pages publiques."
+            footer={
+              <p className="text-sm text-ink/50">
+                <Link
+                  href="/publications"
+                  className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline"
+                >
+                  Voir les publications
+                </Link>
+                {" · "}
+                <Link
+                  href="/publier"
+                  className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline"
+                >
+                  Publier
+                </Link>
+              </p>
+            }
+          >
+            <p className="max-w-2xl text-sm leading-relaxed text-ink/70">
+              Créez un compte pour soumettre un contenu : il reste « en attente » jusqu’à validation par une équipe
+              d’administration.
+            </p>
           </EditorialSection>
         </div>
       </PageContainer>

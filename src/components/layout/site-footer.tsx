@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 py-14 sm:flex-row sm:items-start sm:justify-between sm:py-16">
         <div className="max-w-md space-y-3">
           <p className="font-editorial-serif text-xl font-medium text-ink">{siteName}</p>
-          <p className="text-sm italic leading-relaxed text-terracotta/80">{brand.subtitle}</p>
+          <p className="text-sm font-bold italic leading-relaxed text-terracotta/80">{brand.subtitle}</p>
           <p className="text-sm leading-relaxed text-ink/65">
             Un site personnel tenu comme une petite revue : l’outil au service du texte, le texte au service de la
             clarté — en français, pour durer.

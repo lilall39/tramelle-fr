@@ -26,7 +26,13 @@ export default function OutilsIndexPage() {
       <ul className="grid gap-5 sm:grid-cols-2">
         {sorted.map((o) => (
           <li key={o.slug}>
-            <ContentCard href={`/outils/${o.slug}`} title={o.title} meta="Outil" description={o.tagline} />
+            <ContentCard
+              href={`/outils/${o.slug}`}
+              title={o.title}
+              meta="Outil"
+              description={o.tagline}
+              strongTeaser
+            />
           </li>
         ))}
       </ul>

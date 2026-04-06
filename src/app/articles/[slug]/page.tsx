@@ -49,7 +49,7 @@ export default async function ArticlePage({ params }: Props) {
   return (
     <PageContainer>
       <article className="pb-8">
-        <nav className="mb-10 text-sm text-ink/55" aria-label="Fil d’Ariane">
+        <nav className="mb-10 text-lg font-bold text-ink/60" aria-label="Fil d’Ariane">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
               <Link href="/articles" className="underline-offset-4 hover:text-ink hover:underline">

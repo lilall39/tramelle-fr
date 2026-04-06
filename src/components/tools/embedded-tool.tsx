@@ -13,7 +13,7 @@ type Props = {
 export function EmbeddedTool({ src, title }: Props) {
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-relaxed text-ink/65">
+      <p className="text-sm font-bold leading-relaxed text-terracotta">
         L’interface ci-dessous provient d’un service externe. Si le chargement semble long, c’est souvent parce que le
         serveur se réveille après une période d’inactivité — attendez un peu ou actualisez la page.
       </p>

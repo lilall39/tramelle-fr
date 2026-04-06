@@ -9,7 +9,7 @@ export function PageIntro({ title, intro, eyebrow }: Props) {
   return (
     <header className="space-y-6 border-b border-ink/[0.08] pb-12">
       {eyebrow ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">{eyebrow}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-terracotta">{eyebrow}</p>
       ) : null}
       <h1 className="font-editorial-serif text-[2.1rem] font-medium leading-tight tracking-tight text-ink sm:text-5xl sm:leading-[1.08]">
         {title}

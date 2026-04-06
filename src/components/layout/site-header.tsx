@@ -4,8 +4,10 @@ import Link from "next/link";
 import { brand, siteDomain } from "@/lib/site";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { AuthLinks } from "@/components/layout/auth-links";
 
 const navItems = [
+  { href: "/publications", label: "Publications" },
   { href: "/outils", label: "Outils" },
   { href: "/articles", label: "Articles" },
   { href: "/billets", label: "Billets" },
@@ -45,14 +47,11 @@ export function SiteHeader() {
               aria-label={`${brand.kicker}, accueil`}
               onClick={() => setMenuOpen(false)}
             >
-              <span className="font-editorial-serif text-[1.65rem] font-semibold leading-none tracking-tight text-ink md:text-[1.85rem]">
+              <span className="font-editorial-serif text-[1.75rem] font-bold leading-none tracking-tight text-ink md:text-[1.95rem]">
                 {brand.kicker}
               </span>
-              <span className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-ink/40">
+              <span className="text-[0.8rem] font-bold uppercase tracking-[0.28em] text-ink/55">
                 {siteDomain}
-              </span>
-              <span className="text-sm font-sans font-normal italic leading-snug text-terracotta/75 transition-colors group-hover:text-accent">
-                {brand.subtitle}
               </span>
             </Link>
             <button
@@ -80,7 +79,7 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-md border-b-2 border-transparent px-3 py-3 text-sm font-medium transition-colors md:border-b-2 md:px-3 md:py-1.5 ${
+                  className={`rounded-md border-b-2 border-transparent px-3 py-3 text-base font-bold transition-colors md:border-b-2 md:px-3 md:py-1.5 ${
                     active
                       ? "bg-paper-muted/80 text-ink md:border-accent md:bg-transparent"
                       : "text-ink/65 hover:bg-paper-muted/50 hover:text-ink md:hover:bg-transparent md:hover:border-terracotta/30"
@@ -92,14 +91,14 @@ export function SiteHeader() {
                 </Link>
               );
             })}
-            <span className="hidden px-1 text-ink/25 md:inline" aria-hidden>
+            <span className="hidden px-1 text-base text-ink/25 md:inline" aria-hidden>
               ·
             </span>
             <Link
               href="/a-propos"
-              className={`rounded-md border-b-2 border-transparent px-3 py-3 text-sm transition-colors md:border-b-2 md:px-3 md:py-1.5 ${
+              className={`rounded-md border-b-2 border-transparent px-3 py-3 text-base font-bold transition-colors md:border-b-2 md:px-3 md:py-1.5 ${
                 pathname === "/a-propos"
-                  ? "bg-paper-muted/80 font-medium text-ink md:border-accent md:bg-transparent"
+                  ? "bg-paper-muted/80 text-ink md:border-accent md:bg-transparent"
                   : "text-ink/45 hover:bg-paper-muted/50 hover:text-ink/85 md:hover:bg-transparent md:hover:border-terracotta/35"
               }`}
               aria-current={pathname === "/a-propos" ? "page" : undefined}
@@ -107,6 +106,27 @@ export function SiteHeader() {
             >
               À propos
             </Link>
+            <span className="hidden px-1 text-base text-ink/25 md:inline" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/contact"
+              className={`rounded-md border-b-2 border-transparent px-3 py-3 text-base font-bold transition-colors md:border-b-2 md:px-3 md:py-1.5 ${
+                pathname === "/contact"
+                  ? "bg-paper-muted/80 text-ink md:border-accent md:bg-transparent"
+                  : "text-ink/65 hover:bg-paper-muted/50 hover:text-ink md:hover:bg-transparent md:hover:border-terracotta/30"
+              }`}
+              aria-current={pathname === "/contact" ? "page" : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
+              Contact
+            </Link>
+            <span className="hidden px-1 text-base text-ink/25 md:inline" aria-hidden>
+              ·
+            </span>
+            <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:gap-x-1">
+              <AuthLinks onNavigate={() => setMenuOpen(false)} />
+            </div>
           </nav>
         </div>
       </div>

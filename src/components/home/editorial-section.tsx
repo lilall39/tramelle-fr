@@ -22,7 +22,7 @@ export function EditorialSection({ id, number, eyebrow, title, description, chil
             {number}
           </span>
           <div className="space-y-3 pt-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">{eyebrow}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-terracotta">{eyebrow}</p>
             <h2 className="font-editorial-serif text-3xl font-medium tracking-tight text-ink sm:text-[2rem]">{title}</h2>
             <p className="max-w-xl text-base leading-relaxed text-ink/68">{description}</p>
           </div>

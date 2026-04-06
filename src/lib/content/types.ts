@@ -39,4 +39,6 @@ export type OutilMeta = {
   tags: string[];
   /** Si défini, l’outil est affiché dans une iframe (hébergement externe). */
   embedUrl?: string;
+  /** Lien vers une ressource externe (pas d’iframe) : page Tramelle avec appel à l’action. */
+  externalUrl?: string;
 };

@@ -1,8 +1,11 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { EmbeddedTool } from "@/components/tools/embedded-tool";
+import { ExternalToolLinkout } from "@/components/tools/external-tool-linkout";
+import { CataloguePromptsIntro } from "@/components/tools/catalogue-prompts-intro";
 import { SurConsigneIntro } from "@/components/tools/sur-consigne-intro";
 import { ToolShell } from "@/components/tools/tool-shell";
 import { PercentageTool } from "@/components/tools/percentage-tool";
+import { VatCalculatorTool } from "@/components/tools/vat-calculator-tool";
 import { WhitespaceTool } from "@/components/tools/whitespace-tool";
 import { WordCounterTool } from "@/components/tools/word-counter-tool";
 import { getAllOutilSlugs, getOutilBySlug } from "@/lib/content/outils";
@@ -36,6 +39,9 @@ function ToolBody({ slug }: { slug: string }) {
   if (outil.embedUrl) {
     return <EmbeddedTool src={outil.embedUrl} title={outil.title} />;
   }
+  if (outil.externalUrl) {
+    return <ExternalToolLinkout href={outil.externalUrl} title={outil.title} />;
+  }
   switch (slug) {
     case "compteur-de-mots":
       return <WordCounterTool />;
@@ -43,6 +49,8 @@ function ToolBody({ slug }: { slug: string }) {
       return <WhitespaceTool />;
     case "pourcentage-rapide":
       return <PercentageTool />;
+    case "calcul-tva":
+      return <VatCalculatorTool />;
     default:
       return null;
   }
@@ -57,10 +65,11 @@ export default async function OutilPage({ params }: Props) {
   if (!body) notFound();
 
   const isEmbedded = Boolean(outil.embedUrl);
+  const isExternal = Boolean(outil.externalUrl);
 
   return (
     <PageContainer>
-      <nav className="mb-10 text-sm text-ink/55" aria-label="Fil d’Ariane">
+      <nav className="mb-10 text-lg font-bold text-ink/60" aria-label="Fil d’Ariane">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
             <Link href="/outils" className="underline-offset-4 hover:text-ink hover:underline">
@@ -75,7 +84,15 @@ export default async function OutilPage({ params }: Props) {
       </nav>
       <ToolShell
         title={outil.title}
-        description={outil.slug === "sur-consigne" ? <SurConsigneIntro /> : outil.description}
+        description={
+          outil.slug === "sur-consigne" ? (
+            <SurConsigneIntro />
+          ) : outil.slug === "catalogue-prompts-ia" ? (
+            <CataloguePromptsIntro />
+          ) : (
+            outil.description
+          )
+        }
       >
         {body}
       </ToolShell>
@@ -83,6 +100,11 @@ export default async function OutilPage({ params }: Props) {
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
           L’outil Sur consigne s’exécute sur un serveur distant (hébergement séparé). Les temps de réponse au premier chargement
           dépendent de ce service — les outils 100 % dans le navigateur, eux, restent instantanés sur Tramelle.
+        </p>
+      ) : isExternal ? (
+        <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
+          Ce renvoi mène vers un site tiers : contenu, disponibilité et conditions d’usage dépendent de son auteur. Tramelle
+          n’héberge pas ce catalogue et ne collecte rien lorsque vous suivez le lien.
         </p>
       ) : (
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">

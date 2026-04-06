@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    /** Toujours tester `signedIn()` avant tout accès à `request.auth.uid`. */
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'user';
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == userId
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.uid == resource.data.uid);
+      allow delete: if false;
+    }
+
+    match /submissions/{docId} {
+      // Plusieurs `allow read` sont combinées en OU : le moteur de requêtes associe mieux
+      // `where("status","==","approved")` à la première ligne (évite permission-denied sur list).
+      allow read: if resource.data.status == 'approved';
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /contactMessages/{docId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.recipientUserId == request.auth.uid);
+      allow create: if
+        (request.resource.data.submissionId == null
+          && request.resource.data.recipientUserId == 'SITE'
+          && request.resource.data.message.size() > 0
+          && request.resource.data.message.size() < 12000)
+        || (
+          request.resource.data.submissionId != null
+          && exists(/databases/$(database)/documents/submissions/$(request.resource.data.submissionId))
+          && get(/databases/$(database)/documents/submissions/$(request.resource.data.submissionId)).data.userId == request.resource.data.recipientUserId
+          && get(/databases/$(database)/documents/submissions/$(request.resource.data.submissionId)).data.status == 'approved'
+          && request.resource.data.message.size() > 0
+        );
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+  }
+}
