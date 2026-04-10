@@ -6,6 +6,8 @@ import type { PublicSubmission } from "@/types/community";
 import { getPublicPublicationById } from "@/lib/community/submissions";
 import { CATEGORY_LABELS } from "@/lib/community/labels";
 import { formatFirestoreDate } from "@/lib/community/format-date";
+import { getSiteUrl } from "@/lib/site";
+import { useAuth } from "@/contexts/auth-context";
 import { ContactPublicationForm } from "@/components/community/contact-publication-form";
 import { PublicationResponsesSection } from "@/components/community/publication-responses-section";
 import { PageContainer } from "@/components/layout/page-container";
@@ -37,31 +39,48 @@ function previewImageUrl(submission: PublicSubmission): string | null {
   return String(raw);
 }
 
-async function handleNativeShare(submission: PublicSubmission): Promise<boolean> {
-  if (typeof navigator === "undefined" || !navigator.share) {
-    return false;
+/** URL absolue pour l’aperçu / copie d’image (chemins relatifs → domaine canonique du site). */
+function toAbsoluteUrlOnSite(href: string): string {
+  const t = href.trim();
+  if (/^https?:\/\//i.test(t)) return t;
+  if (t.startsWith("/")) {
+    return `${getSiteUrl().replace(/\/+$/, "")}${t}`;
   }
-  try {
-    const content = generateShareContent(pickShareable(submission));
-    await navigator.share({
-      title: content.text,
-      text: content.text,
-      url: content.url,
-    });
-    return true;
-  } catch (e) {
-    console.error(e);
-    return false;
-  }
+  return t;
 }
 
-function buildModalShareContent(shareText: string, shareUrl: string): ShareContent {
-  return { text: shareText, url: shareUrl, hashtags: [] };
+/** Lien public de la publication : même base que le reste du site (tramelle.fr ou NEXT_PUBLIC_SITE_URL), pas localhost. */
+function publicationCanonicalUrl(publicationId: string): string {
+  return `${getSiteUrl().replace(/\/+$/, "")}/publications/${publicationId}`;
 }
 
+/** E-mail : le corps est exactement le texte édité (pas la logique text+url du core). */
+function openShareEmailWithEditedBody(shareText: string): void {
+  const trimmed = shareText.trim();
+  const firstLine = trimmed.split(/\r?\n/)[0] ?? "Publication";
+  const subject = firstLine.slice(0, 200);
+  window.open(
+    `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(shareText)}`,
+    "_blank",
+    "noopener,noreferrer",
+  );
+}
+
+/**
+ * Réseaux : le message partagé suit le textarea (`shareText`).
+ * X : tout dans `text`, `url` vide pour éviter un lien en double si le texte contient déjà l’URL.
+ */
 function openSharePlatform(shareText: string, shareUrl: string, platform: SharePlatform): void {
   try {
-    const url = buildShareUrl(platform, buildModalShareContent(shareText, shareUrl));
+    if (platform === "email") {
+      openShareEmailWithEditedBody(shareText);
+      return;
+    }
+    const content: ShareContent =
+      platform === "twitter"
+        ? { text: shareText, url: "", hashtags: [] }
+        : { text: shareText, url: shareUrl, hashtags: [] };
+    const url = buildShareUrl(platform, content);
     window.open(url, "_blank", "noopener,noreferrer");
   } catch (e) {
     console.error(e);
@@ -69,6 +88,7 @@ function openSharePlatform(shareText: string, shareUrl: string, platform: ShareP
 }
 
 export function PublicationDetailClient({ id }: Props) {
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<PublicSubmission | null | undefined>(undefined);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [shareText, setShareText] = useState("");
@@ -108,12 +128,20 @@ export function PublicationDetailClient({ id }: Props) {
     }
   }, [isShareOpen]);
 
+  useEffect(() => {
+    if (authLoading) return;
+    const allowed = Boolean(user && data && data.userId === user.uid);
+    if (!allowed) setIsShareOpen(false);
+  }, [authLoading, user, data]);
+
   function openShareModal(submission: PublicSubmission): void {
     const content = generateShareContent(pickShareable(submission));
-    const combined = `${content.text}\n\n${content.url}`;
+    const pageUrl = publicationCanonicalUrl(submission.id);
+    const combined = `${content.text}\n\n${pageUrl}`;
     setShareText(combined);
-    setShareUrl(content.url);
-    setShareImage(previewImageUrl(submission));
+    setShareUrl(pageUrl);
+    const img = previewImageUrl(submission);
+    setShareImage(img ? toAbsoluteUrlOnSite(img) : null);
     setIsShareOpen(true);
   }
 
@@ -123,6 +151,26 @@ export function PublicationDetailClient({ id }: Props) {
       console.log("Texte copié");
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  async function copyModalImage(): Promise<void> {
+    if (!shareImage) return;
+    try {
+      const res = await fetch(shareImage, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const type = blob.type && /^image\//i.test(blob.type) ? blob.type : "image/png";
+      await navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+      console.log("Image copiée");
+    } catch (e) {
+      console.error(e);
+      try {
+        await navigator.clipboard.writeText(shareImage);
+        console.log("Lien de l’image copié");
+      } catch (e2) {
+        console.error(e2);
+      }
     }
   }
 
@@ -141,6 +189,8 @@ export function PublicationDetailClient({ id }: Props) {
   const s = data;
   const hero =
     s.category === "article" ? s.coverImage || s.imageUrl : s.imageUrl;
+  const isAuthor = Boolean(user && s.userId === user.uid);
+  const showAuthorShare = !authLoading && isAuthor;
 
   return (
     <PageContainer>
@@ -151,26 +201,19 @@ export function PublicationDetailClient({ id }: Props) {
           {s.displayName} · {s.city} · {formatFirestoreDate(s.createdAt)}
         </p>
 
-        <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="Partager cette publication">
-          <button
-            type="button"
-            onClick={() => openShareModal(s)}
-            className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
-            aria-label="Ouvrir la fenêtre pour partager cette publication"
-            title="Partager"
-          >
-            Partager
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleNativeShare(s)}
-            className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
-            aria-label="Ouvrir le menu de partage du téléphone ou de l’ordinateur"
-            title="Partager via le système"
-          >
-            Partager...
-          </button>
-        </div>
+        {showAuthorShare ? (
+          <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="Partager votre publication">
+            <button
+              type="button"
+              onClick={() => openShareModal(s)}
+              className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
+              aria-label="Ouvrir la fenêtre pour partager votre publication"
+              title="Partager"
+            >
+              Partager
+            </button>
+          </div>
+        ) : null}
 
         {hero ? (
           <div className="mt-8 overflow-hidden rounded-xl border border-ink/[0.08] bg-paper-muted">
@@ -249,12 +292,18 @@ export function PublicationDetailClient({ id }: Props) {
               </div>
             ) : null}
 
-            <p className="mt-3 text-xs text-ink/60">
-              L’image sera automatiquement ajoutée lors du partage sur les réseaux qui l’affichent (aperçu Open Graph).
-            </p>
+            {shareImage ? (
+              <p className="mt-3 text-xs text-ink/60">
+                Les réseaux peuvent afficher un aperçu du lien ; utilisez « Copier l’image » pour coller la photo si votre navigateur l’autorise.
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-ink/60">
+                Cette annonce n’a pas de photo jointe — seul le texte et le lien ci‑dessous seront partagés.
+              </p>
+            )}
 
             <label htmlFor="share-modal-url" className="mt-4 block text-xs font-bold uppercase tracking-wider text-ink/50">
-              Lien
+              Lien de la page
             </label>
             <input
               id="share-modal-url"
@@ -282,10 +331,24 @@ export function PublicationDetailClient({ id }: Props) {
                 type="button"
                 onClick={() => void copyModalText()}
                 className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
-                aria-label="Copier le texte du message dans le presse-papiers"
+                aria-label="Copier le texte affiché ci-dessus (tel que modifié)"
                 title="Copier le texte"
               >
                 Copier le texte
+              </button>
+              <button
+                type="button"
+                disabled={!shareImage}
+                onClick={() => void copyModalImage()}
+                className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition enabled:hover:border-terracotta/50 enabled:hover:text-terracotta disabled:cursor-not-allowed disabled:opacity-45 dark:border-ink/[0.2] dark:bg-paper-elevated"
+                aria-label={
+                  shareImage
+                    ? "Copier l’image de la publication dans le presse-papiers"
+                    : "Aucune image à copier pour cette publication"
+                }
+                title={shareImage ? "Copier l’image" : "Pas d’image sur cette annonce"}
+              >
+                Copier l’image
               </button>
             </div>
 
