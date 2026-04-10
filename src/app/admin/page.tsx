@@ -22,6 +22,11 @@ export default function AdminHomePage() {
             Messages de contact
           </Link>
         </li>
+        <li>
+          <Link href="/admin/responses" className="text-terracotta underline">
+            Modération des réponses
+          </Link>
+        </li>
       </ul>
     </PageContainer>
   );

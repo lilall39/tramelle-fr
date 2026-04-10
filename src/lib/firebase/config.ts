@@ -2,8 +2,8 @@ import type { FirebaseOptions } from "firebase/app";
 
 /** Config Firebase Web (variables NEXT_PUBLIC_* — exposées au navigateur, c’est le fonctionnement prévu par Firebase). */
 export function getFirebaseWebConfig(): FirebaseOptions | null {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim();
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim();
   if (!apiKey || !projectId) return null;
 
   return {

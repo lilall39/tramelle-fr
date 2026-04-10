@@ -6,7 +6,7 @@ export type UserStatus = "active" | "disabled";
 
 export type SubmissionCategory = "annonce" | "service" | "vente" | "don" | "article";
 
-export type SubmissionStatus = "pending" | "approved" | "rejected";
+export type SubmissionStatus = "pending" | "approved" | "rejected" | "deleted";
 
 export type ContactMessageStatus = "new" | "read" | "archived";
 
@@ -66,4 +66,19 @@ export type ContactMessage = {
 /** Vue publique (sans champs privés). */
 export type PublicSubmission = Omit<Submission, "privateName" | "privateEmail" | "privatePhone"> & {
   id: string;
+};
+
+export type ResponseParentType = "submission";
+
+/** Réponse modérée liée à une publication (`Submission`). */
+export type Response = {
+  id: string;
+  parentId: string;
+  parentType: ResponseParentType;
+  content: string;
+  authorId: string;
+  status: SubmissionStatus;
+  createdAt: number;
+  /** Extension future : fil de discussion. */
+  parentResponseId?: string | null;
 };

@@ -12,4 +12,5 @@ export const STATUS_LABELS: Record<SubmissionStatus, string> = {
   pending: "En attente de modération",
   approved: "Publiée",
   rejected: "Refusée",
+  deleted: "Supprimée",
 };

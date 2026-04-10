@@ -8,6 +8,18 @@ export function firebaseErrorHint(err: unknown): string {
     if (code === "unauthenticated") {
       return "Session expirée. Déconnecte-toi et reconnecte-toi, puis réessaie.";
     }
+    if (code.startsWith("storage/")) {
+      if (code === "storage/unauthorized") {
+        return "Accès refusé au stockage des fichiers. Reconnecte-toi et réessaie.";
+      }
+      if (code === "storage/quota-exceeded") {
+        return "Espace de stockage insuffisant. Réessaie plus tard ou contacte le site.";
+      }
+      if (code === "storage/canceled") {
+        return "Envoi du fichier interrompu. Réessaie.";
+      }
+      return "Problème lors de l’envoi du fichier. Vérifie ta connexion et réessaie.";
+    }
   }
   if (err instanceof Error && err.message) return err.message;
   return "Une erreur est survenue. Réessaie ou vérifie la console du navigateur (F12).";

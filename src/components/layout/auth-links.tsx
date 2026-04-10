@@ -27,6 +27,9 @@ export function AuthLinks({ onNavigate }: { onNavigate?: () => void }) {
   if (!user) {
     return (
       <>
+        <Link href="/login?next=/publier" className={linkClass(false)} onClick={onNavigate}>
+          Publier
+        </Link>
         <Link
           href="/login"
           className={linkClass(pathname === "/login")}

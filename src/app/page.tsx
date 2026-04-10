@@ -111,7 +111,6 @@ export default function HomePage() {
                   <ContentCard
                     href={`/outils/${o.slug}`}
                     title={o.title}
-                    meta="Outil"
                     description={o.tagline}
                     variant="compact"
                     strongTeaser
@@ -196,19 +195,18 @@ export default function HomePage() {
                 >
                   Voir les publications
                 </Link>
-                {" · "}
-                <Link
-                  href="/publier"
-                  className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline"
-                >
-                  Publier
-                </Link>
               </p>
             }
           >
             <p className="max-w-2xl text-sm leading-relaxed text-ink/70">
-              Créez un compte pour soumettre un contenu : il reste « en attente » jusqu’à validation par une équipe
-              d’administration.
+              Créez un compte pour{" "}
+              <Link
+                href="/login?next=/publier"
+                className="font-bold text-terracotta underline-offset-4 transition-colors hover:text-ink hover:underline"
+              >
+                Publier
+              </Link>{" "}
+              un contenu : il reste « en attente » jusqu’à validation par une équipe d’administration.
             </p>
           </EditorialSection>
         </div>

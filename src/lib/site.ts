@@ -20,8 +20,8 @@ export const brand = {
   /** Accroche terracotta sur l’accueil uniquement (footer / JSON-LD gardent `subtitle`). */
   heroKickerLine: "Tramelle — Applications, Services, Ventes, Articles, Annonces, etc.",
   subtitle: "Outils minuscules, textes posés",
-  heroTitle: "L’utile sans le bruit.",
+  heroTitle: "L’utile sans le bruit",
   heroLead:
-    "Ici, pas de tunnel d’inscription ni de tableau de bord : de petites applications pour le quotidien, des articles qu’on peut rouvrir le lendemain, des services, etc., sans promesse miracle.",
+    "Consultez librement les annonces et les contenus, profitez d’outils utiles au quotidien, et publiez simplement vos propres annonces ou écrits : ici, pas de tunnel d’inscription compliqué, une inscription par e-mail suffit si vous voulez publier — pas de promesse miracle, juste des services accessibles, concrets et efficaces.",
   sommaireLabel: "Explorer",
 } as const;

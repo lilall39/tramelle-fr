@@ -4,9 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { deleteSubmission, getSubmissionByIdFull, updateSubmissionStatus } from "@/lib/community/submissions";
+import {
+  applyModerationAction,
+  getSubmissionByIdFull,
+  permanentlyDeleteSubmissionForModeration,
+} from "@/lib/community/submissions";
 import type { Submission } from "@/types/community";
-import { CATEGORY_LABELS } from "@/lib/community/labels";
+import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/community/labels";
 import { formatFirestoreDate } from "@/lib/community/format-date";
 import { firebaseErrorHint } from "@/lib/firebase/error-hint";
 import { PageContainer } from "@/components/layout/page-container";
@@ -33,28 +37,35 @@ export function AdminModerationDetail({ id }: Props) {
     };
   }, [id]);
 
-  async function setStatus(next: "approved" | "rejected") {
+  async function runModeration(action: "approve" | "reject" | "delete") {
     if (!data) return;
+    if (action === "delete" && !window.confirm("Archiver cette publication (statut supprimé) ?")) return;
     setActionError(null);
     setBusy(true);
     try {
-      await updateSubmissionStatus(data.id, next);
+      await applyModerationAction(data.id, data, action);
       router.replace("/admin/moderation");
       router.refresh();
     } catch (e) {
-      setActionError(firebaseErrorHint(e));
+      setActionError(e instanceof Error ? e.message : firebaseErrorHint(e));
     } finally {
       setBusy(false);
     }
   }
 
-  async function removeSubmission() {
+  async function runPermanentDelete() {
     if (!data) return;
-    if (!window.confirm("Supprimer définitivement cette publication ?")) return;
+    if (
+      !window.confirm(
+        "Effacer définitivement cette publication et tous les commentaires associés ? Cette action est irréversible.",
+      )
+    ) {
+      return;
+    }
     setActionError(null);
     setBusy(true);
     try {
-      await deleteSubmission(data.id);
+      await permanentlyDeleteSubmissionForModeration(data.id);
       router.replace("/admin/moderation");
       router.refresh();
     } catch (e) {
@@ -77,6 +88,8 @@ export function AdminModerationDetail({ id }: Props) {
   }
 
   const s = data;
+  /** Même source que le flux /publier : image principale + couverture article (souvent identiques). */
+  const moderationImageUrl = s.imageUrl ?? s.coverImage ?? null;
 
   return (
     <PageContainer>
@@ -114,12 +127,44 @@ export function AdminModerationDetail({ id }: Props) {
         <div className="whitespace-pre-wrap pt-2 text-ink/85">{s.description}</div>
       </section>
 
+      {s.category === "article" ? (
+        <section className="mt-6 space-y-3 text-sm">
+          {s.subtitle ? (
+            <p>
+              <span className="font-bold">Sous-titre :</span> {s.subtitle}
+            </p>
+          ) : null}
+          <div>
+            <p className="font-bold text-ink">Corps de l’article</p>
+            <div className="mt-2 whitespace-pre-wrap rounded-xl border border-ink/[0.08] bg-paper-muted/30 p-4 text-ink/90">
+              {s.content?.trim() ? s.content : "Aucun corps d’article saisi."}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {moderationImageUrl ? (
+        <section className="mt-6" aria-label="Image du billet">
+          <p className="text-sm font-bold text-ink">Image</p>
+          <div className="mt-2 max-w-xs overflow-hidden rounded-xl border border-ink/[0.1] bg-paper-muted/30">
+            {/* eslint-disable-next-line @next/next/no-img-element -- URL Firebase Storage, domaine dynamique */}
+            <img
+              src={moderationImageUrl}
+              alt=""
+              className="max-h-48 w-full object-contain"
+            />
+          </div>
+        </section>
+      ) : null}
+
+      <p className="mt-8 text-sm font-bold text-ink/55">Statut : {STATUS_LABELS[s.status] ?? s.status}</p>
+
       {s.status === "pending" ? (
-        <div className="mt-10 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
             disabled={busy}
-            onClick={() => void setStatus("approved")}
+            onClick={() => void runModeration("approve")}
             className="rounded-md bg-ink px-4 py-2 text-sm font-bold text-paper disabled:opacity-50"
           >
             Approuver
@@ -127,26 +172,57 @@ export function AdminModerationDetail({ id }: Props) {
           <button
             type="button"
             disabled={busy}
-            onClick={() => void setStatus("rejected")}
+            onClick={() => void runModeration("reject")}
             className="rounded-md border border-ink/[0.2] px-4 py-2 text-sm font-bold text-ink disabled:opacity-50"
           >
             Refuser
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runModeration("delete")}
+            className="rounded-md border border-red-300/80 px-4 py-2 text-sm font-bold text-red-800 disabled:opacity-50 dark:border-red-900/50 dark:text-red-300"
+          >
+            Supprimer
+          </button>
+        </div>
+      ) : s.status === "deleted" ? (
+        <div className="mt-6 flex flex-col gap-4">
+          <p className="text-xs text-ink/50">
+            Cette publication est archivée. Pour effacer définitivement la fiche et les commentaires en base :
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runPermanentDelete()}
+            className="self-start rounded-md border border-red-300/80 px-4 py-2 text-sm font-bold text-red-800 disabled:opacity-50 dark:border-red-900/50 dark:text-red-300"
+          >
+            Effacer définitivement
+          </button>
         </div>
       ) : (
-        <p className="mt-8 text-sm font-bold text-ink/55">Statut : {s.status}</p>
+        <div className="mt-6 flex flex-col gap-4">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runModeration("delete")}
+            className="text-sm font-bold text-red-700 underline decoration-red-700/40 underline-offset-2 hover:text-red-800 disabled:opacity-50 dark:text-red-400"
+          >
+            Supprimer (archiver)
+          </button>
+          <p className="text-xs text-ink/50">
+            L’archivage retire la publication du site. Pour effacer complètement la fiche et les commentaires en base :
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runPermanentDelete()}
+            className="self-start rounded-md border border-red-300/80 px-4 py-2 text-sm font-bold text-red-800 disabled:opacity-50 dark:border-red-900/50 dark:text-red-300"
+          >
+            Effacer définitivement
+          </button>
+        </div>
       )}
-
-      <div className="mt-8 border-t border-ink/[0.08] pt-8">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void removeSubmission()}
-          className="text-sm font-bold text-red-700 underline decoration-red-700/40 underline-offset-2 hover:text-red-800 disabled:opacity-50 dark:text-red-400"
-        >
-          Supprimer définitivement
-        </button>
-      </div>
     </PageContainer>
   );
 }

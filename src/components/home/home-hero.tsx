@@ -2,10 +2,11 @@ import Link from "next/link";
 import { brand } from "@/lib/site";
 
 const sommaire = [
-  { href: "#outils", num: "01", label: "Applis", hint: "le concret" },
-  { href: "#articles", num: "02", label: "Articles", hint: "le long" },
-  { href: "#billets", num: "03", label: "Billets", hint: "la voix" },
-  { href: "#offres-et-services", num: "04", label: "Offres et recherche services", hint: "proposer ou trouver" },
+  { href: "#offres-et-services", num: "01", label: "Annonces" },
+  { href: "#articles", num: "02", label: "Articles" },
+  { href: "/login", num: "03", label: "Écrire" },
+  { href: "#outils", num: "04", label: "Outils" },
+  { href: "/login?next=/publier", num: "05", label: "Publier" },
 ] as const;
 
 export function HomeHero() {
@@ -15,18 +16,20 @@ export function HomeHero() {
       aria-labelledby="hero-title"
     >
       <div className="relative mx-auto max-w-6xl">
-        <p className="text-lg font-bold italic text-terracotta/85">{brand.heroKickerLine}</p>
-        <h1
-          id="hero-title"
-          className="font-editorial-serif mt-5 max-w-[18ch] text-[2.4rem] font-medium leading-[1.08] tracking-tight text-ink sm:max-w-none sm:text-6xl sm:leading-[1.05]"
-        >
-          {brand.heroTitle}
-        </h1>
-        <p className="mt-8 max-w-2xl text-lg leading-[1.65] text-ink/78 sm:text-xl sm:leading-[1.6]">
-          {brand.heroLead}
-        </p>
+        <div className="text-center">
+          <p className="text-lg font-bold text-terracotta/85">{brand.heroKickerLine}</p>
+          <h1
+            id="hero-title"
+            className="font-editorial-serif mx-auto mt-12 max-w-[18ch] text-[2.4rem] font-medium leading-[1.08] tracking-tight text-ink sm:max-w-none sm:text-6xl sm:leading-[1.05]"
+          >
+            {brand.heroTitle}
+          </h1>
+          <p className="mx-auto mt-8 max-w-2xl text-lg leading-[1.65] text-ink/78 sm:text-xl sm:leading-[1.6]">
+            {brand.heroLead}
+          </p>
+        </div>
 
-        <div className="mt-12 border-t border-ink/[0.08] pt-10">
+        <div className="mt-12 rounded-xl border-2 border-emerald-200/80 bg-[#eff3f1] px-4 pt-10 pb-6 sm:px-6">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-terracotta">{brand.sommaireLabel}</p>
           <ul className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-3">
             {sommaire.map((item) => (
@@ -41,7 +44,6 @@ export function HomeHero() {
                   <span className="font-medium underline decoration-ink/[0.12] underline-offset-[0.25em] transition-[text-decoration-color] group-hover:decoration-accent/55">
                     {item.label}
                   </span>
-                  <span className="text-base text-ink/45">— {item.hint}</span>
                 </Link>
               </li>
             ))}

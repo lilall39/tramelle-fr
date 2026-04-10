@@ -4,10 +4,15 @@ import { ExternalToolLinkout } from "@/components/tools/external-tool-linkout";
 import { CataloguePromptsIntro } from "@/components/tools/catalogue-prompts-intro";
 import { ToolShell } from "@/components/tools/tool-shell";
 import { PercentageTool } from "@/components/tools/percentage-tool";
-import { VatCalculatorTool } from "@/components/tools/vat-calculator-tool";
-import { WhitespaceTool } from "@/components/tools/whitespace-tool";
 import { WordCounterTool } from "@/components/tools/word-counter-tool";
-import { getAllOutilSlugs, getOutilBySlug } from "@/lib/content/outils";
+import { ContentCard } from "@/components/ui/content-card";
+import {
+  getAllCategoryIds,
+  getAllOutilSlugs,
+  getCategoryById,
+  getOutilBySlug,
+  getToolsByCategory,
+} from "@/lib/content/outils";
 import { getSiteUrl } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,11 +21,19 @@ import { notFound } from "next/navigation";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  return getAllOutilSlugs().map((slug) => ({ slug }));
+  return [...getAllOutilSlugs(), ...getAllCategoryIds()].map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const category = getCategoryById(slug);
+  if (category) {
+    return {
+      title: `Outils ${category.label.toLowerCase()}`,
+      description: category.description,
+      alternates: { canonical: `/outils/${slug}` },
+    };
+  }
   const outil = getOutilBySlug(slug);
   if (!outil) return { title: "Outil introuvable" };
   const url = `${getSiteUrl()}/outils/${slug}`;
@@ -44,12 +57,8 @@ function ToolBody({ slug }: { slug: string }) {
   switch (slug) {
     case "compteur-de-mots":
       return <WordCounterTool />;
-    case "nettoyer-espaces":
-      return <WhitespaceTool />;
     case "pourcentage-rapide":
       return <PercentageTool />;
-    case "calcul-tva":
-      return <VatCalculatorTool />;
     default:
       return null;
   }
@@ -57,6 +66,43 @@ function ToolBody({ slug }: { slug: string }) {
 
 export default async function OutilPage({ params }: Props) {
   const { slug } = await params;
+  const category = getCategoryById(slug);
+  if (category) {
+    const tools = getToolsByCategory(category.id);
+    return (
+      <PageContainer>
+        <nav className="mb-10 text-lg font-bold text-ink/60" aria-label="Fil d’Ariane">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/outils" className="underline-offset-4 hover:text-ink hover:underline">
+                Outils
+              </Link>
+            </li>
+            <li aria-hidden className="text-ink/35">
+              /
+            </li>
+            <li className="text-ink/80">{category.label}</li>
+          </ol>
+        </nav>
+        <header className="mb-8">
+          <h1 className="font-editorial-serif text-4xl font-bold text-ink">Outils de {category.label.toLowerCase()}</h1>
+          <p className="mt-3 max-w-2xl text-base text-ink/70">{category.description}</p>
+        </header>
+        {tools.length === 0 ? (
+          <p className="text-sm text-ink/60">Aucun outil dans cette categorie pour le moment.</p>
+        ) : (
+          <ul className="grid gap-5 sm:grid-cols-2">
+            {tools.map((tool) => (
+              <li key={tool.slug}>
+                <ContentCard href={`/outils/${tool.slug}`} title={tool.title} description={tool.tagline} strongTeaser />
+              </li>
+            ))}
+          </ul>
+        )}
+      </PageContainer>
+    );
+  }
+
   const outil = getOutilBySlug(slug);
   if (!outil) notFound();
 
@@ -78,9 +124,22 @@ export default async function OutilPage({ params }: Props) {
           <li aria-hidden className="text-ink/35">
             /
           </li>
+          <li>
+            <Link href={`/outils/${outil.category}`} className="underline-offset-4 hover:text-ink hover:underline">
+              {getCategoryById(outil.category)?.label ?? "Categorie"}
+            </Link>
+          </li>
+          <li aria-hidden className="text-ink/35">
+            /
+          </li>
           <li className="text-ink/80">{outil.title}</li>
         </ol>
       </nav>
+      <p className="mb-6 text-sm font-bold text-terracotta">
+        <Link href={`/outils/${outil.category}`} className="underline-offset-4 hover:underline">
+          ← Retour a {getCategoryById(outil.category)?.label ?? "la categorie"}
+        </Link>
+      </p>
       <ToolShell
         title={outil.title}
         description={

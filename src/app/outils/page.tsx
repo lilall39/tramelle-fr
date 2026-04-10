@@ -1,36 +1,36 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { ContentCard } from "@/components/ui/content-card";
 import { PageIntro } from "@/components/ui/page-intro";
-import { outils } from "@/lib/content/outils";
+import { getToolsByCategory, outilCategories } from "@/lib/content/outils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Outils",
   description:
-    "Mini-outils en ligne : compteur de mots, nettoyage d’espaces, calcul de pourcentages — gratuits et sans inscription.",
+    "Mini-outils en ligne : compteur de mots, calcul de pourcentages, liens utiles — gratuits et sans inscription.",
   alternates: { canonical: "/outils" },
 };
 
 export default function OutilsIndexPage() {
-  const sorted = [...outils].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  const categories = outilCategories.map((category) => ({
+    ...category,
+    toolCount: getToolsByCategory(category.id).length,
+  }));
 
   return (
     <PageContainer>
       <PageIntro
         eyebrow="Pratique"
         title="Outils"
-        intro="Une collection qui grandit lentement. Chaque page fait une chose honnête — puis vous laisse reprendre votre travail, sans vous retenir dans un tableau de bord."
+        intro="Choisissez une categorie pour parcourir les outils. Chaque outil reste accessible avec son adresse directe."
       />
       <ul className="grid gap-5 sm:grid-cols-2">
-        {sorted.map((o) => (
-          <li key={o.slug}>
+        {categories.map((category) => (
+          <li key={category.id}>
             <ContentCard
-              href={`/outils/${o.slug}`}
-              title={o.title}
-              meta="Outil"
-              description={o.tagline}
+              href={`/outils/${category.id}`}
+              title={category.label}
+              description={`${category.description} (${category.toolCount} outil${category.toolCount > 1 ? "s" : ""})`}
               strongTeaser
             />
           </li>

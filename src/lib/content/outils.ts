@@ -1,6 +1,44 @@
 import type { OutilMeta } from "./types";
 
-export const outils: OutilMeta[] = [
+export type OutilCategoryId = "redaction" | "calculs" | "seo" | "ia" | "utilitaires";
+
+export type OutilCategory = {
+  id: OutilCategoryId;
+  label: string;
+  description: string;
+};
+
+export const outilCategories: OutilCategory[] = [
+  {
+    id: "redaction",
+    label: "Redaction",
+    description: "Outils pour ecrire, reformuler et verifier un texte avant publication.",
+  },
+  {
+    id: "calculs",
+    label: "Calculs",
+    description: "Petits calculateurs pour les besoins rapides du quotidien.",
+  },
+  {
+    id: "seo",
+    label: "SEO",
+    description: "Outils pour travailler la visibilite et la structure des contenus.",
+  },
+  {
+    id: "ia",
+    label: "IA",
+    description: "Ressources pour preparer et ameliorer des demandes a l'IA.",
+  },
+  {
+    id: "utilitaires",
+    label: "Utilitaires",
+    description: "Fonctions pratiques qui ne rentrent pas dans les autres categories.",
+  },
+];
+
+export type OutilMetaWithCategory = OutilMeta & { category: OutilCategoryId };
+
+export const outils: OutilMetaWithCategory[] = [
   {
     kind: "outil",
     slug: "compteur-de-mots",
@@ -10,16 +48,7 @@ export const outils: OutilMeta[] = [
       "Collez un texte ou tapez sur place : le compteur se met à jour en direct. Pratique pour les mails, les éditos, les longs messages qui méritent d’être un peu plus courts.",
     publishedAt: "2026-03-01",
     tags: ["texte", "rédaction"],
-  },
-  {
-    kind: "outil",
-    slug: "nettoyer-espaces",
-    title: "Nettoyer les espaces",
-    tagline: "Supprimer espaces surnuméraires et sauts de ligne fantômes.",
-    description:
-      "Souvent, on colle un paragraphe depuis un PDF ou un mail et il arrive avec des trous bizarres. Cet outil normalise les espaces et les retours à la ligne — sans « réécrire » votre texte.",
-    publishedAt: "2026-02-15",
-    tags: ["texte", "collage"],
+    category: "redaction",
   },
   {
     kind: "outil",
@@ -30,16 +59,7 @@ export const outils: OutilMeta[] = [
       "Vous saisissez A et B, puis vous regardez l’encadré sous les champs. Le bloc intitulé « Proportion (part de A dans B) » indique quelle part représente A par rapport à B — par exemple 25 et 100 donnent 25 %. Le bloc « Variation en passant de A à B » indique de combien de pourcents on monte ou on baisse quand on passe de la valeur A à la valeur B — par exemple 80 puis 100 donnent +25 %. Pas besoin de tableur.",
     publishedAt: "2026-02-01",
     tags: ["calcul", "quotidien"],
-  },
-  {
-    kind: "outil",
-    slug: "calcul-tva",
-    title: "Calcul TVA",
-    tagline: "Passer du HT au TTC (ou l’inverse) aux taux français courants.",
-    description:
-      "Choisissez un taux (20 %, 10 %, 5,5 %, 2,1 % ou un pourcentage personnalisé), indiquez un montant HT ou TTC : l’outil affiche la TVA et les deux montants complémentaires.",
-    publishedAt: "2026-03-28",
-    tags: ["calcul", "pro"],
+    category: "calculs",
   },
   {
     kind: "outil",
@@ -52,13 +72,28 @@ export const outils: OutilMeta[] = [
     publishedAt: "2026-04-04",
     tags: ["IA", "rédaction", "texte"],
     externalUrl: "https://vincentflibustier.com/prompting.html",
+    category: "ia",
   },
 ];
 
-export function getOutilBySlug(slug: string): OutilMeta | undefined {
+export function getOutilBySlug(slug: string): OutilMetaWithCategory | undefined {
   return outils.find((o) => o.slug === slug);
 }
 
 export function getAllOutilSlugs(): string[] {
   return outils.map((o) => o.slug);
+}
+
+export function getCategoryById(id: string): OutilCategory | undefined {
+  return outilCategories.find((c) => c.id === id);
+}
+
+export function getAllCategoryIds(): string[] {
+  return outilCategories.map((c) => c.id);
+}
+
+export function getToolsByCategory(categoryId: OutilCategoryId): OutilMetaWithCategory[] {
+  return outils
+    .filter((o) => o.category === categoryId)
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
