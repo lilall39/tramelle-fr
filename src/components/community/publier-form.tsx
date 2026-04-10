@@ -201,6 +201,13 @@ export function PublierForm() {
     e.preventDefault();
     if (!user) return;
     if (submitLock.current || pending) return;
+    const emailTrim = privateEmail.trim();
+    const phoneTrim = privatePhone.trim();
+    if (!emailTrim && !phoneTrim) {
+      setError("Indiquez au moins un e-mail ou un numéro de téléphone pour la modération.");
+      setSuccess(null);
+      return;
+    }
     submitLock.current = true;
     setError(null);
     setSuccess(null);
@@ -257,17 +264,34 @@ export function PublierForm() {
         <fieldset className="space-y-3 rounded-xl border border-ink/[0.08] bg-paper-muted/30 p-4 dark:border-ink/[0.12]">
           <legend className="px-1 text-sm font-bold text-ink/80">Coordonnées privées (modération)</legend>
           <p className="text-xs text-ink/50">Ne sont jamais affichées sur les pages publiques.</p>
+          <p id="contact-moderation-hint" className="text-xs text-ink/55">
+            Renseignez au moins un e-mail ou un téléphone (l’un suffit si l’autre est vide).
+          </p>
           <label className="block text-sm font-bold text-ink">
             Nom complet
             <input required value={privateName} onChange={(e) => setPrivateName(e.target.value)} className={inputClass} />
           </label>
           <label className="block text-sm font-bold text-ink">
             E-mail
-            <input type="email" required value={privateEmail} onChange={(e) => setPrivateEmail(e.target.value)} className={inputClass} />
+            <input
+              type="email"
+              autoComplete="email"
+              value={privateEmail}
+              onChange={(e) => setPrivateEmail(e.target.value)}
+              className={inputClass}
+              aria-describedby="contact-moderation-hint"
+            />
           </label>
           <label className="block text-sm font-bold text-ink">
             Téléphone
-            <input type="tel" value={privatePhone} onChange={(e) => setPrivatePhone(e.target.value)} className={inputClass} />
+            <input
+              type="tel"
+              autoComplete="tel"
+              value={privatePhone}
+              onChange={(e) => setPrivatePhone(e.target.value)}
+              className={inputClass}
+              aria-describedby="contact-moderation-hint"
+            />
           </label>
         </fieldset>
 
