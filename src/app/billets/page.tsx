@@ -2,7 +2,10 @@ import { PageContainer } from "@/components/layout/page-container";
 import { ContentCard } from "@/components/ui/content-card";
 import { PageIntro } from "@/components/ui/page-intro";
 import { billets } from "@/lib/content/billets";
+import { getNonLiveEditorialSlugsServer } from "@/lib/server/editorial-pages";
 import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Billets",
@@ -27,10 +30,11 @@ function teaserFromBlocks(blocks: (typeof billets)[0]["blocks"]): string {
   return text.slice(0, 197).trimEnd() + "…";
 }
 
-export default function BilletsIndexPage() {
-  const sorted = [...billets].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+export default async function BilletsIndexPage() {
+  const excluded = await getNonLiveEditorialSlugsServer("billet");
+  const sorted = [...billets]
+    .filter((b) => !excluded.has(b.slug))
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
   return (
     <PageContainer>

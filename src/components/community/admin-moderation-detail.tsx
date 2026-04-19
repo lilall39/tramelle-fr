@@ -13,6 +13,7 @@ import type { Submission } from "@/types/community";
 import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/community/labels";
 import { formatFirestoreDate } from "@/lib/community/format-date";
 import { firebaseErrorHint } from "@/lib/firebase/error-hint";
+import { getSubmissionGalleryUrls } from "@/lib/community/submission-images";
 import { PageContainer } from "@/components/layout/page-container";
 
 type Props = { id: string };
@@ -88,8 +89,7 @@ export function AdminModerationDetail({ id }: Props) {
   }
 
   const s = data;
-  /** Même source que le flux /publier : image principale + couverture article (souvent identiques). */
-  const moderationImageUrl = s.imageUrl ?? s.coverImage ?? null;
+  const moderationGallery = getSubmissionGalleryUrls(s);
 
   return (
     <PageContainer>
@@ -124,6 +124,11 @@ export function AdminModerationDetail({ id }: Props) {
         <p>
           <span className="font-bold">Ville :</span> {s.city}
         </p>
+        {s.price != null ? (
+          <p>
+            <span className="font-bold">Prix :</span> {s.price} €
+          </p>
+        ) : null}
         <div className="whitespace-pre-wrap pt-2 text-ink/85">{s.description}</div>
       </section>
 
@@ -143,16 +148,16 @@ export function AdminModerationDetail({ id }: Props) {
         </section>
       ) : null}
 
-      {moderationImageUrl ? (
-        <section className="mt-6" aria-label="Image du billet">
-          <p className="text-sm font-bold text-ink">Image</p>
-          <div className="mt-2 max-w-xs overflow-hidden rounded-xl border border-ink/[0.1] bg-paper-muted/30">
-            {/* eslint-disable-next-line @next/next/no-img-element -- URL Firebase Storage, domaine dynamique */}
-            <img
-              src={moderationImageUrl}
-              alt=""
-              className="max-h-48 w-full object-contain"
-            />
+      {moderationGallery.length > 0 ? (
+        <section className="mt-6" aria-label="Images du billet">
+          <p className="text-sm font-bold text-ink">{moderationGallery.length > 1 ? "Images" : "Image"}</p>
+          <div className="mt-2 grid max-w-2xl gap-3 sm:grid-cols-2">
+            {moderationGallery.map((url, i) => (
+              <div key={`${url}-${i}`} className="overflow-hidden rounded-xl border border-ink/[0.1] bg-paper-muted/30">
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL Firebase Storage, domaine dynamique */}
+                <img src={url} alt="" className="max-h-48 w-full object-contain" />
+              </div>
+            ))}
           </div>
         </section>
       ) : null}

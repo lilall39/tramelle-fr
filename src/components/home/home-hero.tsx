@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { homeBodyProseClass } from "@/lib/home-body-prose";
 import { brand } from "@/lib/site";
 
 const sommaire = [
@@ -24,9 +25,11 @@ export function HomeHero() {
           >
             {brand.heroTitle}
           </h1>
-          <p className="mx-auto mt-8 max-w-2xl text-lg leading-[1.65] text-ink/78 sm:text-xl sm:leading-[1.6]">
-            {brand.heroLead}
+          <p className="mx-auto mt-6 max-w-2xl text-base italic leading-relaxed text-ink/75 sm:text-lg">
+            🚧 Tramelle.fr est en lancement progressif. Les premiers outils sont déjà disponibles, avec de nouvelles
+            fonctionnalités ajoutées régulièrement.
           </p>
+          <p className={`mx-auto mt-8 max-w-2xl ${homeBodyProseClass}`}>{brand.heroLead}</p>
         </div>
 
         <div className="mt-12 rounded-xl border-2 border-emerald-200/80 bg-[#eff3f1] px-4 pt-10 pb-6 sm:px-6">

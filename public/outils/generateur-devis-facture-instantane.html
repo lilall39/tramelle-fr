@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Générateur devis et facture gratuit | Tramelle</title>
+  <meta name="description" content="Créez devis, factures et acomptes professionnels gratuitement en quelques secondes avec export PDF instantané." />
+  <meta name="theme-color" content="#faf8f5" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --ink: #1c1917;
+      --ink-soft: #57534e;
+      --paper: #faf8f5;
+      --elevated: #ffffff;
+      --line: rgba(28, 25, 23, 0.1);
+      --terracotta: #b4532c;
+      --terracotta-soft: rgba(180, 83, 44, 0.12);
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(28, 25, 23, 0.06), 0 1px 3px rgba(28, 25, 23, 0.04);
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.45;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 0.35rem 0.65rem 1rem; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .editor-head {
+      margin: -0.35rem -0.5rem 0.65rem;
+      padding: 0.35rem 0.5rem 0.55rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .editor-head .brand {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin: 0 0 0.2rem;
+    }
+    .editor-title {
+      font-family: var(--serif);
+      font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+      font-weight: 700;
+      margin: 0 0 0.2rem;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .editor-lead {
+      margin: 0;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      color: var(--ink-soft);
+    }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: var(--elevated);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0.65rem 0.85rem 0.85rem;
+      transition: box-shadow 0.25s ease, border-color 0.2s;
+    }
+    .panel:focus-within { border-color: rgba(180, 83, 44, 0.25); box-shadow: 0 8px 32px rgba(28, 25, 23, 0.08); }
+    .panel h2 {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 0 0 0.45rem;
+    }
+    .editor-panel > h2:first-of-type { margin-top: 0; }
+    .seg {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.65rem;
+    }
+    .seg button {
+      flex: 1;
+      min-width: 100px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .seg button:hover { background: var(--terracotta-soft); border-color: rgba(180, 83, 44, 0.35); }
+    .seg button.active {
+      background: var(--terracotta);
+      color: #fff;
+      border-color: var(--terracotta);
+    }
+    label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 0.3rem; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font: inherit;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: rgba(180, 83, 44, 0.45);
+      box-shadow: 0 0 0 3px var(--terracotta-soft);
+    }
+    textarea { min-height: 52px; resize: vertical; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
+    .field { margin-bottom: 0.5rem; }
+    .editor-panel h2:not(:first-of-type) { margin-top: 0.55rem; }
+    .lines-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--elevated);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn:hover { background: var(--paper); }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--terracotta); color: #fff; border-color: var(--terracotta); }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-ghost { background: transparent; }
+    .line-row {
+      display: grid;
+      grid-template-columns: 1fr 64px 88px 64px 72px 36px;
+      gap: 0.4rem;
+      align-items: end;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    @media (max-width: 720px) {
+      .line-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "d d" "q u" "disc vat" "rm rm";
+      }
+      .line-row .lr-desc { grid-area: d; }
+      .line-row .lr-q { grid-area: q; }
+      .line-row .lr-u { grid-area: u; }
+      .line-row .lr-disc { grid-area: disc; }
+      .line-row .lr-vat { grid-area: vat; }
+      .line-row .lr-rm { grid-area: rm; justify-self: end; }
+    }
+    .line-row input, .line-row select { font-size: 0.8rem; padding: 0.45rem; }
+    .line-head {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-soft);
+      padding-bottom: 0.25rem;
+    }
+    .totals-box {
+      margin-top: 0.55rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      background: linear-gradient(145deg, var(--paper) 0%, #fff 100%);
+      border: 1px solid var(--line);
+    }
+    .totals-row { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.25rem 0; }
+    .totals-row strong { font-size: 1.05rem; }
+    .totals-row.ttc { border-top: 1px solid var(--line); margin-top: 0.5rem; padding-top: 0.65rem; font-weight: 700; }
+    .deposit-block { margin-top: 0.55rem; padding: 0.65rem 0.75rem; border-radius: 10px; border: 1px dashed rgba(180, 83, 44, 0.35); background: var(--terracotta-soft); }
+    .deposit-block.hidden { display: none; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
+    .templates { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+    .templates button { font-size: 0.72rem; padding: 0.35rem 0.55rem; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+    .templates button:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+    .preview-wrap { position: relative; }
+    .preview-wrap.panel { padding-bottom: 0.65rem; }
+    .preview-wrap .panel-h2 { margin-bottom: 0.4rem; }
+    .preview-sheet {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      box-sizing: border-box;
+      width: 210mm;
+      max-width: 100%;
+      min-height: 220px;
+      padding: 7mm 11mm 9mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
+      max-height: min(70vh, 640px);
+      overflow: auto;
+    }
+    @media print {
+      body * { visibility: hidden !important; }
+      #preview-sheet, #preview-sheet * { visibility: visible !important; }
+      #preview-sheet {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        min-height: 297mm !important;
+        max-height: none !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 7mm 11mm 9mm !important;
+      }
+    }
+    /* Pas de flex-grow : évite le grand vide au milieu quand la feuille fait une hauteur A4 */
+    #preview-inner.ps-doc {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      width: 100%;
+    }
+    .ps-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+    .ps-logo { max-width: 128px; max-height: 60px; object-fit: contain; }
+    .ps-doc-title {
+      font-family: var(--serif);
+      font-size: calc(1.5rem + 3pt);
+      font-weight: 700;
+      color: var(--terracotta);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-top: 0.2rem;
+    }
+    .ps-meta { font-size: calc(0.82rem + 1pt); color: var(--ink-soft); text-align: right; line-height: 1.55; }
+    .ps-meta strong { color: var(--ink); font-weight: 700; }
+    .ps-parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.5rem;
+      margin-bottom: 1.15rem;
+    }
+    @media (max-width: 520px) {
+      .ps-parties { grid-template-columns: 1fr; }
+    }
+    .ps-block { margin-bottom: 0; }
+    .ps-block + .ps-block { margin-top: 0.85rem; }
+    .ps-parties .ps-block + .ps-block { margin-top: 0; }
+    .ps-block h3 {
+      font-size: calc(0.62rem + 1pt);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-soft);
+      margin: 0 0 0.4rem;
+    }
+    .ps-block p { margin: 0; font-size: calc(0.88rem + 1pt); line-height: 1.5; white-space: pre-wrap; }
+    /* Espace ~2 lignes au-dessus de l’en-tête du tableau (Description, Qté…) */
+    .ps-table-wrap { margin: 2.5rem 0 0.5rem; }
+    table.ps-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: calc(0.8rem + 1pt);
+    }
+    .ps-table th {
+      text-align: left;
+      padding: 0.55rem 0.45rem;
+      border-bottom: 2px solid var(--ink);
+      font-size: calc(0.62rem + 1pt);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-soft);
+      background: rgba(28, 25, 23, 0.03);
+    }
+    .ps-table td {
+      padding: 0.58rem 0.45rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      line-height: 1.45;
+    }
+    .ps-table tbody tr:nth-child(even) td { background: rgba(250, 248, 245, 0.5); }
+    .ps-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .ps-totals-panel {
+      width: 100%;
+      max-width: 300px;
+      margin-left: auto;
+      margin-top: 0.5rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(250, 248, 245, 0.9) 0%, #fff 100%);
+      box-shadow: 0 1px 0 rgba(28, 25, 23, 0.04);
+    }
+    .ps-tot-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.5rem;
+      font-size: calc(0.84rem + 1pt);
+      padding: 0.28rem 0;
+      color: var(--ink-soft);
+    }
+    .ps-tot-row span:last-child {
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .ps-tot-row.ps-tot-sub span:last-child { color: var(--terracotta); }
+    .ps-tot-row.ps-tot-ttc {
+      margin-top: 0.45rem;
+      padding-top: 0.55rem;
+      border-top: 2px solid var(--ink);
+      font-size: calc(0.98rem + 1pt);
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .ps-tot-row.ps-tot-ttc span { color: var(--ink); }
+    .ps-tot-row.ps-tot-ttc span:last-child { font-size: calc(1.05rem + 1pt); }
+    .ps-tot-row.ps-tot-acompte {
+      margin-top: 0.5rem;
+      padding-top: 0.45rem;
+      border-top: 1px dashed rgba(180, 83, 44, 0.35);
+      color: var(--terracotta);
+    }
+    .ps-tot-row.ps-tot-acompte span:last-child { color: var(--terracotta); font-weight: 700; }
+    .ps-acompte-extra { margin-top: 0.65rem; font-size: calc(0.84rem + 1pt); line-height: 1.5; }
+    .ps-notes {
+      font-size: calc(0.76rem + 1pt);
+      color: var(--ink-soft);
+      margin-top: 1.1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+    .ps-footer {
+      flex: 0 0 auto;
+      margin-top: auto;
+      padding-top: 0.65rem;
+      padding-bottom: 3mm;
+      font-size: calc(0.62rem + 1pt);
+      letter-spacing: 0.04em;
+      color: var(--ink-soft);
+      text-align: center;
+      border-top: 1px solid rgba(28, 25, 23, 0.08);
+    }
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--ink);
+      color: #fff;
+      padding: 0.65rem 1.25rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="layout">
+      <div class="panel editor-panel" id="editor">
+        <div class="editor-head">
+          <p class="brand">Tramelle</p>
+          <h1 class="editor-title">Générateur de devis &amp; facture</h1>
+          <p class="editor-lead">Sans inscription · PDF · données locales dans le navigateur</p>
+        </div>
+        <h2>Type de document</h2>
+        <div class="seg" id="doc-type-seg" role="tablist">
+          <button type="button" data-type="devis" class="active" aria-selected="true">Devis</button>
+          <button type="button" data-type="facture">Facture</button>
+          <button type="button" data-type="facture_acompte">Facture d’acompte</button>
+        </div>
+
+        <h2>Votre structure</h2>
+        <div class="grid2">
+          <div class="field"><label for="b-name">Raison sociale</label><input id="b-name" type="text" autocomplete="organization" /></div>
+          <div class="field"><label for="b-siret">SIRET <span style="font-weight:400">(optionnel)</span></label><input id="b-siret" type="text" inputmode="numeric" /></div>
+        </div>
+        <div class="field"><label for="b-addr">Adresse</label><textarea id="b-addr" rows="2"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label for="b-email">E-mail</label><input id="b-email" type="email" autocomplete="email" /></div>
+          <div class="field"><label for="b-phone">Téléphone</label><input id="b-phone" type="tel" autocomplete="tel" /></div>
+        </div>
+        <div class="field"><label for="b-logo">Logo <span style="font-weight:400">(optionnel)</span></label><input id="b-logo" type="file" accept="image/*" /></div>
+
+        <h2>Client</h2>
+        <div class="grid2">
+          <div class="field"><label for="c-name">Nom ou contact</label><input id="c-name" type="text" /></div>
+          <div class="field"><label for="c-co">Société <span style="font-weight:400">(optionnel)</span></label><input id="c-co" type="text" /></div>
+        </div>
+        <div class="field"><label for="c-addr">Adresse</label><textarea id="c-addr" rows="2"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" /></div>
+          <div class="field"><label for="c-phone">Téléphone</label><input id="c-phone" type="tel" /></div>
+        </div>
+
+        <h2>Document</h2>
+        <div class="grid2">
+          <div class="field"><label for="doc-no">N° document</label><input id="doc-no" type="text" /></div>
+          <div class="field"><label for="issue-date">Date d’émission</label><input id="issue-date" type="date" /></div>
+        </div>
+        <div class="field"><label for="due-date">Date d’échéance</label><input id="due-date" type="date" /></div>
+
+        <h2>Lignes</h2>
+        <div class="lines-toolbar">
+          <button type="button" class="btn btn-primary" id="add-line">+ Ligne</button>
+          <span style="font-size:0.75rem;color:var(--ink-soft)">Remise et TVA par ligne</span>
+        </div>
+        <div id="lines-container"></div>
+
+        <div class="totals-box" id="totals-live" aria-live="polite"></div>
+
+        <div class="deposit-block hidden" id="deposit-block">
+          <h2 style="margin-top:0">Acompte</h2>
+          <div class="grid2">
+            <div class="field">
+              <label for="dep-mode">Mode</label>
+              <select id="dep-mode"><option value="pct">Pourcentage du TTC</option><option value="fixed">Montant fixe €</option></select>
+            </div>
+            <div class="field">
+              <label for="dep-val">Valeur</label>
+              <input id="dep-val" type="number" min="0" step="0.01" value="30" />
+            </div>
+          </div>
+        </div>
+
+        <h2>Notes &amp; conditions</h2>
+        <div class="field"><label for="n-payment">Modalités de paiement</label><textarea id="n-payment" rows="2" placeholder="Ex. virement sous 30 jours"></textarea></div>
+        <div class="field"><label for="n-late">Pénalités de retard</label><textarea id="n-late" rows="2" placeholder="Ex. indemnité forfaitaire 40 € (art. L441-6 C. com.)"></textarea></div>
+        <div class="field"><label for="n-bank">RIB / IBAN</label><textarea id="n-bank" rows="2"></textarea></div>
+        <div class="field"><label for="n-custom">Notes libres</label><textarea id="n-custom" rows="2"></textarea></div>
+
+        <h2>Modèles rapides</h2>
+        <p style="font-size:0.75rem;color:var(--ink-soft);margin:0 0 0.35rem">Préremplit lignes et libellés — modifiable.</p>
+        <div class="templates" id="templates"></div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="btn-pdf">Télécharger PDF</button>
+          <button type="button" class="btn" id="btn-print">Imprimer</button>
+          <button type="button" class="btn" id="btn-copy">Copier le résumé</button>
+          <button type="button" class="btn" id="btn-save">Enregistrer brouillon</button>
+          <button type="button" class="btn btn-ghost" id="btn-reset">Réinitialiser</button>
+        </div>
+      </div>
+
+      <div class="preview-wrap panel">
+        <h2 class="panel-h2">Aperçu A4</h2>
+        <div class="preview-sheet" id="preview-sheet">
+          <div id="preview-inner" class="ps-doc"></div>
+          <p class="ps-footer">Document généré gratuitement par Tramelle.fr</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+(function () {
+  var STORAGE_KEY = "tramelle-devis-facture-v1";
+  var VAT_OPTS = [0, 5.5, 10, 20];
+
+  function el(id) { return document.getElementById(id); }
+
+  function money(n) {
+    if (!isFinite(n)) return "—";
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+  }
+
+  function todayISO() {
+    var d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  function genDocNo() {
+    var y = new Date().getFullYear();
+    var k = "tramelle-doc-seq-" + y;
+    var n = parseInt(localStorage.getItem(k) || "0", 10) + 1;
+    localStorage.setItem(k, String(n));
+    return "TRM-" + y + "-" + String(n).padStart(4, "0");
+  }
+
+  function getState() {
+    var lines = [];
+    document.querySelectorAll(".line-row").forEach(function (row) {
+      lines.push({
+        description: row.querySelector(".line-inp-desc").value,
+        qty: parseFloat(row.querySelector(".line-inp-q").value) || 0,
+        unit: parseFloat(row.querySelector(".line-inp-u").value) || 0,
+        discount: parseFloat(row.querySelector(".line-inp-disc").value) || 0,
+        vat: parseFloat(row.querySelector(".line-inp-vat").value) || 0
+      });
+    });
+    return {
+      docType: document.querySelector("#doc-type-seg .active").getAttribute("data-type"),
+      business: {
+        name: el("b-name").value,
+        siret: el("b-siret").value,
+        addr: el("b-addr").value,
+        email: el("b-email").value,
+        phone: el("b-phone").value,
+        logoDataUrl: typeof window.__logoDataUrl === "string" ? window.__logoDataUrl : ""
+      },
+      client: {
+        name: el("c-name").value,
+        company: el("c-co").value,
+        addr: el("c-addr").value,
+        email: el("c-email").value,
+        phone: el("c-phone").value
+      },
+      docNo: el("doc-no").value,
+      issueDate: el("issue-date").value,
+      dueDate: el("due-date").value,
+      lines: lines,
+      notes: {
+        payment: el("n-payment").value,
+        late: el("n-late").value,
+        bank: el("n-bank").value,
+        custom: el("n-custom").value
+      },
+      deposit: {
+        mode: el("dep-mode").value,
+        value: parseFloat(el("dep-val").value) || 0
+      }
+    };
+  }
+
+  function lineTotals(line) {
+    var brut = line.qty * line.unit;
+    var rem = brut * (line.discount / 100);
+    var ht = brut - rem;
+    var tvaAmt = ht * (line.vat / 100);
+    var ttc = ht + tvaAmt;
+    return { brut: brut, rem: rem, ht: ht, tva: tvaAmt, ttc: ttc };
+  }
+
+  function compute() {
+    var st = getState();
+    var subHT = 0, totalRem = 0, totalTVA = 0, totalTTC = 0;
+    st.lines.forEach(function (line) {
+      var t = lineTotals(line);
+      subHT += t.ht;
+      totalRem += t.rem;
+      totalTVA += t.tva;
+      totalTTC += t.ttc;
+    });
+    var dep = 0, rest = totalTTC;
+    if (st.docType === "facture_acompte") {
+      if (st.deposit.mode === "pct") {
+        dep = totalTTC * (Math.min(100, Math.max(0, st.deposit.value)) / 100);
+      } else {
+        dep = Math.min(Math.max(0, st.deposit.value), totalTTC);
+      }
+      rest = Math.max(0, totalTTC - dep);
+    }
+    return { st: st, subHT: subHT, totalRem: totalRem, totalTVA: totalTVA, totalTTC: totalTTC, dep: dep, rest: rest };
+  }
+
+  function renderTotalsBox() {
+    var c = compute();
+    var html = "";
+    html += '<div class="totals-row"><span>Total HT</span><span>' + money(c.subHT) + "</span></div>";
+    html += '<div class="totals-row"><span>Remises</span><span>− ' + money(c.totalRem) + "</span></div>";
+    html += '<div class="totals-row"><span>TVA</span><span>' + money(c.totalTVA) + "</span></div>";
+    html += '<div class="totals-row ttc"><span>Total TTC</span><span>' + money(c.totalTTC) + "</span></div>";
+    if (c.st.docType === "facture_acompte") {
+      html += '<div class="totals-row" style="margin-top:0.5rem;color:var(--terracotta)"><span>Acompte demandé</span><span>' + money(c.dep) + "</span></div>";
+      html += '<div class="totals-row"><span>Reste à payer</span><span>' + money(c.rest) + "</span></div>";
+    }
+    el("totals-live").innerHTML = html;
+    el("deposit-block").classList.toggle("hidden", c.st.docType !== "facture_acompte");
+  }
+
+  function docTitle(type) {
+    if (type === "devis") return "DEVIS";
+    if (type === "facture") return "FACTURE";
+    return "FACTURE D’ACOMPTE";
+  }
+
+  function renderPreview() {
+    var c = compute();
+    var st = c.st;
+    var logo = st.business.logoDataUrl ? '<img class="ps-logo" src="' + st.business.logoDataUrl + '" alt="" />' : "";
+    var rows = "";
+    st.lines.forEach(function (line, i) {
+      var t = lineTotals(line);
+      rows += "<tr><td>" + esc(line.description || "—") + '</td><td class="num">' + fmtNum(line.qty) + '</td><td class="num">' + money(line.unit) + '</td><td class="num">' + line.discount + " %</td><td class=\"num\">" + line.vat + " %</td><td class=\"num\">" + money(t.ttc) + "</td></tr>";
+    });
+    var notes = "";
+    if (st.notes.payment) notes += "Paiement : " + st.notes.payment + "\n\n";
+    if (st.notes.late) notes += "Retard : " + st.notes.late + "\n\n";
+    if (st.notes.bank) notes += "Coordonnées bancaires :\n" + st.notes.bank + "\n\n";
+    if (st.notes.custom) notes += st.notes.custom;
+
+    var remRow =
+      c.totalRem > 0.005
+        ? '<div class="ps-tot-row ps-tot-sub"><span>Remises</span><span>− ' + money(c.totalRem) + "</span></div>"
+        : "";
+    var acompteRows = "";
+    if (st.docType === "facture_acompte") {
+      acompteRows =
+        '<div class="ps-tot-row ps-tot-acompte"><span>Acompte demandé</span><span>' +
+        money(c.dep) +
+        "</span></div>" +
+        '<div class="ps-tot-row"><span>Reste à payer</span><span>' +
+        money(c.rest) +
+        "</span></div>";
+    }
+
+    el("preview-inner").innerHTML =
+      '<div class="ps-header">' +
+      '<div>' +
+      logo +
+      '<div class="ps-doc-title">' +
+      docTitle(st.docType) +
+      "</div></div>" +
+      '<div class="ps-meta">N° <strong>' +
+      esc(st.docNo || "—") +
+      "</strong><br/>Date : " +
+      esc(st.issueDate || "—") +
+      "<br/>Échéance : " +
+      esc(st.dueDate || "—") +
+      "</div></div>" +
+      '<div class="ps-parties">' +
+      '<div class="ps-block"><h3>Émetteur</h3><p><strong>' +
+      esc(st.business.name || "—") +
+      "</strong><br/>" +
+      (st.business.siret ? "SIRET : " + esc(st.business.siret) + "<br/>" : "") +
+      esc(st.business.addr) +
+      "<br/>" +
+      esc(st.business.email) +
+      "<br/>" +
+      esc(st.business.phone) +
+      "</p></div>" +
+      '<div class="ps-block"><h3>Client</h3><p><strong>' +
+      esc(st.client.name || "—") +
+      "</strong><br/>" +
+      (st.client.company ? esc(st.client.company) + "<br/>" : "") +
+      esc(st.client.addr) +
+      "<br/>" +
+      esc(st.client.email) +
+      "<br/>" +
+      esc(st.client.phone) +
+      "</p></div></div>" +
+      '<div class="ps-table-wrap"><table class="ps-table"><thead><tr><th>Description</th><th class="num">Qté</th><th class="num">PU HT</th><th class="num">Rem. %</th><th class="num">TVA</th><th class="num">TTC</th></tr></thead><tbody>' +
+      rows +
+      "</tbody></table></div>" +
+      '<div class="ps-totals-panel">' +
+      '<div class="ps-tot-row"><span>Total HT</span><span>' +
+      money(c.subHT) +
+      "</span></div>" +
+      remRow +
+      '<div class="ps-tot-row"><span>TVA</span><span>' +
+      money(c.totalTVA) +
+      "</span></div>" +
+      '<div class="ps-tot-row ps-tot-ttc"><span>Total TTC</span><span>' +
+      money(c.totalTTC) +
+      "</span></div>" +
+      acompteRows +
+      "</div>" +
+      (notes ? '<div class="ps-notes">' + esc(notes) + "</div>" : "");
+
+    renderTotalsBox();
+  }
+
+  function esc(s) {
+    if (!s) return "";
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function fmtNum(n) {
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(n);
+  }
+
+  function addLine(data) {
+    data = data || { description: "", qty: 1, unit: 0, discount: 0, vat: 20 };
+    var wrap = document.createElement("div");
+    wrap.className = "line-row";
+    wrap.innerHTML =
+      '<div class="field" style="margin:0"><label>Description</label><input class="line-inp-desc" type="text" value="' + escAttr(data.description) + '" /></div>' +
+      '<div class="field" style="margin:0"><label>Qté</label><input class="line-inp-q" type="number" min="0" step="0.01" value="' + data.qty + '" /></div>' +
+      '<div class="field" style="margin:0"><label>PU €</label><input class="line-inp-u" type="number" min="0" step="0.01" value="' + data.unit + '" /></div>' +
+      '<div class="field" style="margin:0"><label>Rem. %</label><input class="line-inp-disc" type="number" min="0" max="100" step="0.5" value="' + data.discount + '" /></div>' +
+      '<div class="field" style="margin:0"><label>TVA</label><select class="line-inp-vat">' +
+      VAT_OPTS.map(function (v) {
+        return '<option value="' + v + '"' + (data.vat === v ? " selected" : "") + ">" + v + " %</option>";
+      }).join("") +
+      "</select></div>" +
+      '<div class="line-rm"><button type="button" class="btn btn-ghost" title="Supprimer" aria-label="Supprimer la ligne">✕</button></div>';
+    wrap.querySelector(".line-rm button").addEventListener("click", function () {
+      wrap.remove();
+      renderPreview();
+    });
+    wrap.querySelectorAll("input, select").forEach(function (inp) {
+      inp.addEventListener("input", renderPreview);
+    });
+    el("lines-container").appendChild(wrap);
+  }
+
+  function escAttr(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
+  function wire() {
+    document.querySelectorAll("#doc-type-seg button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#doc-type-seg button").forEach(function (b) {
+          b.classList.remove("active");
+          b.setAttribute("aria-selected", "false");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-selected", "true");
+        renderPreview();
+      });
+    });
+    ["b-name", "b-siret", "b-addr", "b-email", "b-phone", "c-name", "c-co", "c-addr", "c-email", "c-phone", "doc-no", "issue-date", "due-date", "n-payment", "n-late", "n-bank", "n-custom", "dep-mode", "dep-val"].forEach(function (id) {
+      el(id).addEventListener("input", renderPreview);
+      el(id).addEventListener("change", renderPreview);
+    });
+    el("b-logo").addEventListener("change", function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) {
+        window.__logoDataUrl = "";
+        renderPreview();
+        return;
+      }
+      var r = new FileReader();
+      r.onload = function () {
+        window.__logoDataUrl = r.result;
+        renderPreview();
+      };
+      r.readAsDataURL(f);
+    });
+    el("add-line").addEventListener("click", function () {
+      addLine();
+      renderPreview();
+    });
+    el("btn-pdf").addEventListener("click", downloadPdf);
+    el("btn-print").addEventListener("click", function () {
+      window.print();
+    });
+    el("btn-copy").addEventListener("click", copySummary);
+    el("btn-save").addEventListener("click", saveDraft);
+    el("btn-reset").addEventListener("click", function () {
+      if (
+        !confirm(
+          "Tout effacer et repartir à zéro ? Le brouillon enregistré dans ce navigateur sera remplacé par ce formulaire vide."
+        )
+      )
+        return;
+      resetForm(false);
+      toast("Formulaire réinitialisé");
+    });
+
+    var presets = {
+      web: {
+        lines: [
+          { description: "Maquette UX / UI — phase découverte", qty: 1, unit: 1200, discount: 0, vat: 20 },
+          { description: "Intégration front (estimation)", qty: 5, unit: 450, discount: 0, vat: 20 },
+          { description: "Hébergement & mise en ligne (année 1)", qty: 1, unit: 180, discount: 0, vat: 20 }
+        ],
+        payment: "Acompte 30 % à la commande, solde à la livraison. Virement bancaire.",
+        custom: "Devis valable 30 jours."
+      },
+      social: {
+        lines: [
+          { description: "Community management — forfait mensuel", qty: 1, unit: 890, discount: 0, vat: 20 },
+          { description: "Rédaction & planification éditoriale", qty: 1, unit: 350, discount: 10, vat: 20 }
+        ],
+        payment: "Facturation mensuelle, fin de mois + 15 jours."
+      },
+      coaching: {
+        lines: [{ description: "Séance de coaching individuel (1 h)", qty: 1, unit: 120, discount: 0, vat: 20 }],
+        payment: "Paiement à la séance ou pack de 5 séances −10 %."
+      },
+      consulting: {
+        lines: [{ description: "Prestation conseil — TJM", qty: 3, unit: 650, discount: 0, vat: 20 }],
+        payment: "Réglement sous 30 jours fin de mois."
+      },
+      photo: {
+        lines: [
+          { description: "Shooting demi-journée", qty: 1, unit: 480, discount: 0, vat: 20 },
+          { description: "Retouches incluses (20 fichiers)", qty: 1, unit: 0, discount: 0, vat: 20 }
+        ],
+        payment: "Acompte 30 % à la réservation."
+      }
+    };
+
+    var tpl = el("templates");
+    var entries = [
+      ["web", "Web design freelance"],
+      ["social", "Social media"],
+      ["coaching", "Coaching"],
+      ["consulting", "Conseil TJM"],
+      ["photo", "Photographe"]
+    ];
+    entries.forEach(function (pair) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = pair[1];
+      b.addEventListener("click", function () {
+        var p = presets[pair[0]];
+        el("lines-container").innerHTML = "";
+        p.lines.forEach(function (L) {
+          addLine(L);
+        });
+        if (p.payment) el("n-payment").value = p.payment;
+        if (p.custom) el("n-custom").value = p.custom;
+        renderPreview();
+        toast("Modèle appliqué");
+      });
+      tpl.appendChild(b);
+    });
+  }
+
+  function resetForm(keepNum) {
+    el("b-name").value = "";
+    el("b-siret").value = "";
+    el("b-addr").value = "";
+    el("b-email").value = "";
+    el("b-phone").value = "";
+    el("b-logo").value = "";
+    window.__logoDataUrl = "";
+    el("c-name").value = "";
+    el("c-co").value = "";
+    el("c-addr").value = "";
+    el("c-email").value = "";
+    el("c-phone").value = "";
+    if (!keepNum) el("doc-no").value = genDocNo();
+    el("issue-date").value = todayISO();
+    el("due-date").value = "";
+    el("lines-container").innerHTML = "";
+    /* Une ligne vierge (PU à 0) pour que les totaux repassent bien à 0 € après réinit. */
+    addLine({ description: "", qty: 1, unit: 0, discount: 0, vat: 20 });
+    el("n-payment").value = "";
+    el("n-late").value = "";
+    el("n-bank").value = "";
+    el("n-custom").value = "";
+    el("dep-mode").value = "pct";
+    el("dep-val").value = "30";
+    document.querySelector('#doc-type-seg button[data-type="devis"]').click();
+    renderPreview();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+    } catch (e) {}
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      toast("Brouillon enregistré dans ce navigateur");
+    } catch (e) {
+      toast("Enregistrement impossible");
+    }
+  }
+
+  function loadDraft() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      el("b-name").value = s.business.name || "";
+      el("b-siret").value = s.business.siret || "";
+      el("b-addr").value = s.business.addr || "";
+      el("b-email").value = s.business.email || "";
+      el("b-phone").value = s.business.phone || "";
+      window.__logoDataUrl = s.logoDataUrl || s.business.logoDataUrl || "";
+      el("c-name").value = s.client.name || "";
+      el("c-co").value = s.client.company || "";
+      el("c-addr").value = s.client.addr || "";
+      el("c-email").value = s.client.email || "";
+      el("c-phone").value = s.client.phone || "";
+      el("doc-no").value = s.docNo || genDocNo();
+      el("issue-date").value = s.issueDate || todayISO();
+      el("due-date").value = s.dueDate || "";
+      el("n-payment").value = (s.notes && s.notes.payment) || "";
+      el("n-late").value = (s.notes && s.notes.late) || "";
+      el("n-bank").value = (s.notes && s.notes.bank) || "";
+      el("n-custom").value = (s.notes && s.notes.custom) || "";
+      el("dep-mode").value = (s.deposit && s.deposit.mode) || "pct";
+      el("dep-val").value = String((s.deposit && s.deposit.value) ?? 30);
+      document.querySelectorAll("#doc-type-seg button").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-type") === s.docType);
+        b.setAttribute("aria-selected", b.getAttribute("data-type") === s.docType ? "true" : "false");
+      });
+      el("lines-container").innerHTML = "";
+      (s.lines || [{ description: "Prestation", qty: 1, unit: 0, discount: 0, vat: 20 }]).forEach(function (L) {
+        addLine(L);
+      });
+      renderPreview();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function copySummary() {
+    var c = compute();
+    var st = c.st;
+    var text =
+      docTitle(st.docType) +
+      " n° " +
+      (st.docNo || "") +
+      "\nTotal TTC : " +
+      money(c.totalTTC) +
+      "\n" +
+      (st.docType === "facture_acompte" ? "Acompte : " + money(c.dep) + " — Reste : " + money(c.rest) + "\n" : "") +
+      "\n—\nCopié depuis Tramelle.fr";
+    navigator.clipboard.writeText(text).then(
+      function () {
+        toast("Résumé copié");
+      },
+      function () {
+        toast("Copie impossible");
+      }
+    );
+  }
+
+  function downloadPdf() {
+    var node = el("preview-sheet");
+    var btn = el("btn-pdf");
+    btn.disabled = true;
+    if (!window.html2canvas || !window.jspdf) {
+      toast("Bibliothèques PDF non chargées");
+      btn.disabled = false;
+      return;
+    }
+    var prev = {
+      minHeight: node.style.minHeight,
+      maxHeight: node.style.maxHeight,
+      overflow: node.style.overflow,
+      height: node.style.height
+    };
+    node.style.minHeight = "297mm";
+    node.style.maxHeight = "none";
+    node.style.height = "auto";
+    node.style.overflow = "visible";
+    void node.offsetHeight;
+    html2canvas(node, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" })
+      .then(function (canvas) {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+        var pageW = pdf.internal.pageSize.getWidth();
+        var pageH = pdf.internal.pageSize.getHeight();
+        var marginMm = 5;
+        var innerW = pageW - 2 * marginMm;
+        var innerH = pageH - 2 * marginMm;
+        var img = canvas.toDataURL("image/jpeg", 0.92);
+        var imgProps = pdf.getImageProperties(img);
+        var ratio = Math.min(innerW / imgProps.width, innerH / imgProps.height);
+        var iw = imgProps.width * ratio;
+        var ih = imgProps.height * ratio;
+        var x = marginMm + (innerW - iw) / 2;
+        var y = marginMm;
+        pdf.addImage(img, "JPEG", x, y, iw, ih);
+        pdf.save((getState().docNo || "document") + ".pdf");
+        toast("PDF téléchargé");
+      })
+      .catch(function () {
+        toast("Erreur lors du PDF");
+      })
+      .finally(function () {
+        node.style.minHeight = prev.minHeight;
+        node.style.maxHeight = prev.maxHeight;
+        node.style.overflow = prev.overflow;
+        node.style.height = prev.height;
+        btn.disabled = false;
+      });
+  }
+
+  function toast(msg) {
+    var t = el("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._h);
+    t._h = setTimeout(function () {
+      t.classList.remove("show");
+    }, 2600);
+  }
+
+  function debounce(fn, ms) {
+    var h;
+    return function () {
+      clearTimeout(h);
+      h = setTimeout(fn, ms);
+    };
+  }
+
+  wire();
+  if (!loadDraft()) {
+    resetForm(true);
+    el("doc-no").value = genDocNo();
+    el("issue-date").value = todayISO();
+    renderPreview();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+    } catch (e) {}
+  }
+
+  el("editor").addEventListener(
+    "change",
+    debounce(function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      } catch (e) {}
+    }, 600)
+  );
+  el("editor").addEventListener(
+    "input",
+    debounce(function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      } catch (e) {}
+    }, 900)
+  );
+})();
+  </script>
+</body>
+</html>

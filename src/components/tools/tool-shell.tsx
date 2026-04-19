@@ -10,7 +10,7 @@ export function ToolShell({ title, description, children }: Props) {
   return (
     <div className="rounded-2xl border border-ink/[0.08] bg-paper-elevated p-6 shadow-sm shadow-ink/[0.03] sm:p-8">
       <div className="mb-8 space-y-2 border-b border-ink/[0.08] pb-6">
-        <h2 className="font-editorial-serif text-2xl font-bold text-ink">{title}</h2>
+        <h2 className="font-editorial-serif text-2xl font-bold text-outil-title">{title}</h2>
         <div
           className={
             typeof description === "string"

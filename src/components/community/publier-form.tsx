@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Submission, SubmissionCategory } from "@/types/community";
 import { useAuth } from "@/contexts/auth-context";
@@ -8,10 +8,57 @@ import { createSubmission } from "@/lib/community/submissions";
 import { uploadSubmissionImage } from "@/lib/community/storage";
 import { SUBMISSION_IMAGE_ACCEPT, validateSubmissionImage } from "@/lib/community/image-validation";
 import { CATEGORY_LABELS } from "@/lib/community/labels";
+import { MAX_ANNONCE_PHOTOS } from "@/lib/community/submission-images";
 import { PageContainer } from "@/components/layout/page-container";
 import { firebaseErrorHint } from "@/lib/firebase/error-hint";
 
 const CATEGORIES: SubmissionCategory[] = ["annonce", "service", "vente", "don", "article"];
+
+function SubmissionFilePicker({
+  accept,
+  multiple,
+  disabled,
+  buttonLabel,
+  statusLine,
+  onFiles,
+}: {
+  accept: string;
+  multiple?: boolean;
+  disabled?: boolean;
+  buttonLabel: string;
+  statusLine: string;
+  onFiles: (files: FileList | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
+  return (
+    <div className="mt-2 space-y-2">
+      <input
+        ref={inputRef}
+        id={inputId}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        disabled={disabled}
+        className="sr-only"
+        aria-label={buttonLabel}
+        onChange={(e) => {
+          onFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex w-full max-w-md items-center justify-center rounded-lg border border-ink/[0.14] bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:border-terracotta/45 hover:text-terracotta disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-paper-elevated"
+      >
+        {buttonLabel}
+      </button>
+      <p className="break-words text-xs leading-relaxed text-ink/55">{statusLine}</p>
+    </div>
+  );
+}
 
 function useImagePreviewUrl(file: File | null): string | null {
   const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -35,7 +82,10 @@ export function PublierForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [city, setCity] = useState("");
+  /** Catégories vente / don / service / une seule image */
   const [mainFile, setMainFile] = useState<File | null>(null);
+  /** Catégorie annonce uniquement — jusqu’à MAX_ANNONCE_PHOTOS */
+  const [annonceFiles, setAnnonceFiles] = useState<File[]>([]);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("");
@@ -52,10 +102,21 @@ export function PublierForm() {
   const [progress, setProgress] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const mainPreviewForCategory = category === "article" ? null : mainFile;
+  const mainPreviewForCategory =
+    category === "article" || category === "annonce" ? null : mainFile;
   const coverPreviewForCategory = category === "article" ? coverFile : null;
   const mainPreviewUrl = useImagePreviewUrl(mainPreviewForCategory);
   const coverPreviewUrl = useImagePreviewUrl(coverPreviewForCategory);
+
+  const annoncePreviewUrls = useMemo(
+    () => annonceFiles.map((f) => URL.createObjectURL(f)),
+    [annonceFiles],
+  );
+  useEffect(() => {
+    return () => {
+      annoncePreviewUrls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [annoncePreviewUrls]);
   const uploadDiag = useMemo(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -76,6 +137,35 @@ export function PublierForm() {
         }
       }
     : null;
+
+  function addAnnoncePhotos(fileList: FileList | null): void {
+    if (!fileList?.length) return;
+    const take = MAX_ANNONCE_PHOTOS - annonceFiles.length;
+    if (take <= 0) {
+      setError(`Maximum ${MAX_ANNONCE_PHOTOS} photos.`);
+      setSuccess(null);
+      return;
+    }
+    const next = [...annonceFiles];
+    for (let i = 0; i < fileList.length && next.length < MAX_ANNONCE_PHOTOS; i++) {
+      const file = fileList.item(i);
+      if (!file) continue;
+      const v = validateSubmissionImage(file);
+      if (!v.ok) {
+        setError(v.message);
+        setSuccess(null);
+        return;
+      }
+      next.push(file);
+    }
+    setError(null);
+    setSuccess(null);
+    setAnnonceFiles(next);
+  }
+
+  function removeAnnoncePhoto(index: number): void {
+    setAnnonceFiles((prev) => prev.filter((_, i) => i !== index));
+  }
 
   function pickMainImage(file: File | null) {
     if (!file) {
@@ -117,6 +207,7 @@ export function PublierForm() {
   async function runSubmitPipeline(uid: string): Promise<void> {
     let imageUrl: string | null = null;
     let coverImage: string | null = null;
+    let annonceImageUrls: string[] | null = null;
 
     if (category === "article") {
       if (coverFile) {
@@ -131,6 +222,21 @@ export function PublierForm() {
         coverImage = url;
         imageUrl = url;
       }
+    } else if (category === "annonce" && annonceFiles.length > 0) {
+      const urls: string[] = [];
+      const total = annonceFiles.length;
+      for (let i = 0; i < annonceFiles.length; i++) {
+        const file = annonceFiles[i]!;
+        const v = validateSubmissionImage(file);
+        if (!v.ok) throw new Error(v.message);
+        setProgress(`Envoi photo ${i + 1} / ${total}… 0%`);
+        const url = await uploadSubmissionImage(uid, file, "submissions", v.contentType, (p) => {
+          setProgress(`Envoi photo ${i + 1} / ${total}… ${p.percent}%`);
+        }, 0, (label, data) => dbg?.(label, data));
+        urls.push(url);
+      }
+      annonceImageUrls = urls;
+      imageUrl = urls[0] ?? null;
     } else if (mainFile) {
       dbg?.("[UPLOAD] file received", { name: mainFile.name, size: mainFile.size, type: mainFile.type });
       const v = validateSubmissionImage(mainFile);
@@ -154,6 +260,7 @@ export function PublierForm() {
       description: description.trim(),
       city: city.trim(),
       imageUrl,
+      ...(annonceImageUrls && annonceImageUrls.length > 0 ? { imageUrls: annonceImageUrls } : {}),
     };
 
     let payload: Omit<Submission, "createdAt" | "updatedAt"> = base;
@@ -178,6 +285,12 @@ export function PublierForm() {
         rate: rate.trim(),
         serviceArea: serviceArea.trim(),
         serviceMode: serviceMode.trim(),
+      };
+    } else if (category === "annonce") {
+      const p = price.trim() ? Number.parseFloat(price.replace(",", ".")) : NaN;
+      payload = {
+        ...base,
+        ...(Number.isFinite(p) && p >= 0 ? { price: p } : {}),
       };
     } else if (category === "article") {
       payload = {
@@ -250,7 +363,17 @@ export function PublierForm() {
           <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">Catégorie</legend>
           <select
             value={category}
-            onChange={(ev) => setCategory(ev.target.value as SubmissionCategory)}
+            onChange={(ev) => {
+              const next = ev.target.value as SubmissionCategory;
+              setCategory(next);
+              setMainFile(null);
+              setAnnonceFiles([]);
+              setCoverFile(null);
+              if (next === "article") {
+                setDescription("");
+                setCity("");
+              }
+            }}
             className={inputClass}
           >
             {CATEGORIES.map((c) => (
@@ -305,14 +428,23 @@ export function PublierForm() {
             Titre
             <input required value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm font-bold text-ink">
-            Description
-            <textarea required rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
-          </label>
-          <label className="block text-sm font-bold text-ink">
-            Ville / lieu
-            <input required value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} />
-          </label>
+          {category !== "article" ? (
+            <>
+              <label className="block text-sm font-bold text-ink">
+                Description
+                <textarea required rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-bold text-ink">
+                Ville / lieu
+                <input required value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} />
+              </label>
+            </>
+          ) : (
+            <p className="text-sm text-ink/55">
+              Pas de chapô ni de lieu dans l’annonce : le texte de l’article se saisit plus bas (sous-titre optionnel et
+              corps obligatoire).
+            </p>
+          )}
         </fieldset>
 
         {category === "vente" ? (
@@ -330,18 +462,19 @@ export function PublierForm() {
               Remise / livraison
               <input value={deliveryMode} onChange={(e) => setDeliveryMode(e.target.value)} className={inputClass} />
             </label>
-            <label className="block text-sm font-bold text-ink">
+            <div className="block text-sm font-bold text-ink">
               Photo
-              <input
-                type="file"
+              <SubmissionFilePicker
                 accept={SUBMISSION_IMAGE_ACCEPT}
-                onChange={(e) => {
-                  pickMainImage(e.target.files?.[0] ?? null);
-                  e.target.value = "";
-                }}
-                className="mt-1 text-sm"
+                buttonLabel="Choisir une photo…"
+                statusLine={
+                  mainFile
+                    ? `Photo sélectionnée : ${mainFile.name}`
+                    : "Aucune photo pour l’instant — vous pouvez en ajouter une avant d’envoyer."
+                }
+                onFiles={(files) => pickMainImage(files?.[0] ?? null)}
               />
-            </label>
+            </div>
             {previewBox(mainPreviewUrl, "Aperçu de la photo")}
           </fieldset>
         ) : null}
@@ -357,18 +490,19 @@ export function PublierForm() {
               Infos retrait
               <input value={pickupInfo} onChange={(e) => setPickupInfo(e.target.value)} className={inputClass} />
             </label>
-            <label className="block text-sm font-bold text-ink">
+            <div className="block text-sm font-bold text-ink">
               Photo
-              <input
-                type="file"
+              <SubmissionFilePicker
                 accept={SUBMISSION_IMAGE_ACCEPT}
-                onChange={(e) => {
-                  pickMainImage(e.target.files?.[0] ?? null);
-                  e.target.value = "";
-                }}
-                className="mt-1 text-sm"
+                buttonLabel="Choisir une photo…"
+                statusLine={
+                  mainFile
+                    ? `Photo sélectionnée : ${mainFile.name}`
+                    : "Aucune photo pour l’instant — vous pouvez en ajouter une avant d’envoyer."
+                }
+                onFiles={(files) => pickMainImage(files?.[0] ?? null)}
               />
-            </label>
+            </div>
             {previewBox(mainPreviewUrl, "Aperçu de la photo")}
           </fieldset>
         ) : null}
@@ -388,18 +522,19 @@ export function PublierForm() {
               Modalités
               <input value={serviceMode} onChange={(e) => setServiceMode(e.target.value)} className={inputClass} />
             </label>
-            <label className="block text-sm font-bold text-ink">
+            <div className="block text-sm font-bold text-ink">
               Photo
-              <input
-                type="file"
+              <SubmissionFilePicker
                 accept={SUBMISSION_IMAGE_ACCEPT}
-                onChange={(e) => {
-                  pickMainImage(e.target.files?.[0] ?? null);
-                  e.target.value = "";
-                }}
-                className="mt-1 text-sm"
+                buttonLabel="Choisir une photo…"
+                statusLine={
+                  mainFile
+                    ? `Photo sélectionnée : ${mainFile.name}`
+                    : "Aucune photo pour l’instant — vous pouvez en ajouter une avant d’envoyer."
+                }
+                onFiles={(files) => pickMainImage(files?.[0] ?? null)}
               />
-            </label>
+            </div>
             {previewBox(mainPreviewUrl, "Aperçu de la photo")}
           </fieldset>
         ) : null}
@@ -415,38 +550,93 @@ export function PublierForm() {
               Corps de texte
               <textarea required rows={10} value={content} onChange={(e) => setContent(e.target.value)} className={inputClass} />
             </label>
-            <label className="block text-sm font-bold text-ink">
+            <div className="block text-sm font-bold text-ink">
               Image de couverture
-              <input
-                type="file"
+              <SubmissionFilePicker
                 accept={SUBMISSION_IMAGE_ACCEPT}
-                onChange={(e) => {
-                  pickCoverImage(e.target.files?.[0] ?? null);
-                  e.target.value = "";
-                }}
-                className="mt-1 text-sm"
+                buttonLabel="Choisir une image pour la couverture…"
+                statusLine={
+                  coverFile
+                    ? `Image choisie : ${coverFile.name}`
+                    : "Optionnel — vous pouvez envoyer l’article sans image ; une couverture aide pour les listes et le partage."
+                }
+                onFiles={(files) => pickCoverImage(files?.[0] ?? null)}
               />
-            </label>
+            </div>
             {previewBox(coverPreviewUrl, "Aperçu de la couverture")}
           </fieldset>
         ) : null}
 
         {category === "annonce" ? (
           <fieldset className="space-y-3">
-            <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">Visuel</legend>
+            <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">Prix</legend>
             <label className="block text-sm font-bold text-ink">
-              Image (optionnel)
+              Prix (€)
               <input
-                type="file"
-                accept={SUBMISSION_IMAGE_ACCEPT}
-                onChange={(e) => {
-                  pickMainImage(e.target.files?.[0] ?? null);
-                  e.target.value = "";
-                }}
-                className="mt-1 text-sm"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className={inputClass}
+                inputMode="decimal"
+                placeholder="Ex. 120 ou laisser vide"
+                autoComplete="off"
               />
             </label>
-            {previewBox(mainPreviewUrl, "Aperçu de l’image")}
+            <p className="text-xs text-ink/55">Optionnel — indiquez un montant si votre annonce a un prix fixe.</p>
+          </fieldset>
+        ) : null}
+
+        {category === "annonce" ? (
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">Photos</legend>
+            <p className="text-xs text-ink/55">
+              Jusqu’à {MAX_ANNONCE_PHOTOS} photos (optionnel). Formats image courants, taille raisonnable.
+            </p>
+            <div className="block text-sm font-bold text-ink">
+              Ajouter des photos
+              <SubmissionFilePicker
+                accept={SUBMISSION_IMAGE_ACCEPT}
+                multiple
+                disabled={annonceFiles.length >= MAX_ANNONCE_PHOTOS}
+                buttonLabel={
+                  annonceFiles.length >= MAX_ANNONCE_PHOTOS
+                    ? `Nombre maximum de photos (${MAX_ANNONCE_PHOTOS})`
+                    : "Choisir une ou plusieurs photos…"
+                }
+                statusLine={
+                  annonceFiles.length > 0
+                    ? `${annonceFiles.length} fichier${annonceFiles.length > 1 ? "s" : ""} : ${annonceFiles.map((f) => f.name).join(" · ")}`
+                    : "Aucune photo pour l’instant — vous pouvez en ajouter jusqu’à quatre."
+                }
+                onFiles={(files) => addAnnoncePhotos(files)}
+              />
+            </div>
+            {annonceFiles.length > 0 ? (
+              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                {annonceFiles.map((file, i) => (
+                  <li
+                    key={`${file.name}-${file.size}-${i}`}
+                    className="overflow-hidden rounded-lg border border-ink/[0.12] bg-paper-muted/40"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={annoncePreviewUrls[i]}
+                      alt=""
+                      className="max-h-48 w-full object-contain"
+                    />
+                    <div className="flex items-center justify-between gap-2 border-t border-ink/[0.08] px-2 py-1.5 text-xs">
+                      <span className="truncate text-ink/60">{file.name}</span>
+                      <button
+                        type="button"
+                        className="shrink-0 font-bold text-red-700 dark:text-red-400"
+                        onClick={() => removeAnnoncePhoto(i)}
+                      >
+                        Retirer
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </fieldset>
         ) : null}
 

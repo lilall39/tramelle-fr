@@ -18,6 +18,11 @@ export default function AdminHomePage() {
           </Link>
         </li>
         <li>
+          <Link href="/admin/editorial" className="text-terracotta underline">
+            Articles & billets
+          </Link>
+        </li>
+        <li>
           <Link href="/admin/messages" className="text-terracotta underline">
             Messages de contact
           </Link>

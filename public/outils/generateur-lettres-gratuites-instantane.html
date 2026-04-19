@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Générateur de lettres gratuites instantané | Tramelle</title>
+  <meta name="description" content="Créez gratuitement vos lettres prêtes à envoyer : résiliation, préavis logement, remboursement, colis, attestation, réclamation et plus." />
+  <meta name="theme-color" content="#e9f2eb" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --paper: #e9f2eb;
+      --paper-elev: #f4f8f5;
+      --ink: #1f2421;
+      --ink-soft: #3d4540;
+      --accent: #2f4b43;
+      --accent-soft: rgba(47, 75, 67, 0.12);
+      --line: rgba(31, 36, 33, 0.12);
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(31, 36, 33, 0.06);
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 0.5rem 0.75rem 1.5rem; }
+    .tool-head {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .tool-head .brand {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 0.35rem;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.25rem, 3vw, 1.65rem);
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+    .subtitle { margin: 0; font-size: 0.9rem; color: var(--ink-soft); max-width: 52ch; line-height: 1.5; }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    @media (min-width: 1080px) {
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        align-items: start;
+        gap: 1.25rem;
+      }
+      .info-sticky { position: sticky; top: 0.75rem; }
+    }
+    .panel {
+      background: var(--paper-elev);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0.85rem 1rem 1rem;
+    }
+    .panel h2 {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 0 0 0.65rem;
+    }
+    label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 0.28rem; }
+    input, textarea, select {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font: inherit;
+      background: #fff;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    textarea { min-height: 56px; resize: vertical; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
+    .field { margin-bottom: 0.5rem; }
+    .field.hidden { display: none !important; }
+    /* Motif : libellé au-dessus, zone pleine largeur (évite le grand vide entre titre et champ) */
+    .field-motif textarea {
+      min-height: 100px;
+      width: 100%;
+      min-width: 0;
+      display: block;
+    }
+    .main-col {
+      min-width: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .layout > aside {
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .model-btn {
+      padding: 0.45rem 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      line-height: 1.3;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .model-btn:hover { background: var(--accent-soft); border-color: rgba(47, 75, 67, 0.35); }
+    .model-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .seg { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.65rem; }
+    .seg button {
+      flex: 1;
+      min-width: 88px;
+      padding: 0.5rem 0.65rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .seg button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--paper); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .preview-wrap { margin-top: 0.75rem; }
+    .preview-sheet {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: min(55vh, 480px);
+      overflow: auto;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    @media print {
+      body * { visibility: hidden !important; }
+      #letter-sheet, #letter-sheet * { visibility: visible !important; }
+      #letter-sheet {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        max-height: none !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+    .letter-block { margin-bottom: 0.85rem; white-space: pre-wrap; }
+    .letter-obj { font-weight: 700; font-style: italic; margin: 0.75rem 0; }
+    .info-card {
+      background: linear-gradient(165deg, #fff 0%, var(--paper-elev) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+    .info-card h3 {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      margin: 0 0 0.75rem;
+      color: var(--accent);
+    }
+    .info-card ul { margin: 0; padding-left: 1.1rem; font-size: 0.84rem; color: var(--ink-soft); line-height: 1.55; }
+    .info-card li { margin-bottom: 0.35rem; }
+    .disclaimer {
+      margin-top: 1rem;
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      line-height: 1.45;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--line);
+    }
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--ink);
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      z-index: 100;
+      opacity: 0;
+      transition: transform 0.35s, opacity 0.35s;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .letter-signature-img {
+      display: block;
+      max-height: 80px;
+      max-width: 240px;
+      object-fit: contain;
+      margin-bottom: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="tool-head">
+      <p class="brand">Tramelle · Outils</p>
+      <h1>Générateur de lettres gratuites instantané</h1>
+      <p class="subtitle">
+        Créez vos lettres prêtes à envoyer en quelques secondes : résiliation, préavis, remboursement, attestation, réclamation et plus.
+      </p>
+    </header>
+
+    <div class="layout">
+      <div class="main-col">
+        <div class="panel" id="letter-form-root">
+          <h2 id="model-heading">Modèle de lettre</h2>
+          <div class="model-grid" id="model-grid" role="group" aria-labelledby="model-heading"></div>
+
+          <h2>Vos coordonnées</h2>
+          <div class="grid2">
+            <div class="field"><label for="sender-name">Nom et prénom</label><input id="sender-name" type="text" autocomplete="name" /></div>
+            <div class="field"><label for="sender-city">Ville / code postal</label><input id="sender-city" type="text" /></div>
+          </div>
+          <div class="field"><label for="sender-addr">Adresse</label><textarea id="sender-addr" rows="2"></textarea></div>
+          <div class="grid2">
+            <div class="field"><label for="sender-email">E-mail <span style="font-weight:400">(optionnel)</span></label><input id="sender-email" type="email" autocomplete="email" /></div>
+            <div class="field"><label for="sender-phone">Téléphone <span style="font-weight:400">(optionnel)</span></label><input id="sender-phone" type="tel" autocomplete="tel" /></div>
+          </div>
+
+          <h2>Destinataire</h2>
+          <div class="field"><label for="rec-name">Nom / service</label><input id="rec-name" type="text" /></div>
+          <div class="field"><label for="rec-addr">Adresse du destinataire</label><textarea id="rec-addr" rows="2"></textarea></div>
+          <div class="field hidden" id="fg-ref"><label for="ref-dossier">Référence client / dossier <span style="font-weight:400">(optionnel)</span></label><input id="ref-dossier" type="text" /></div>
+
+          <h2>Contenu</h2>
+          <div class="grid2">
+            <div class="field"><label for="letter-obj">Objet</label><input id="letter-obj" type="text" /></div>
+            <div class="field"><label for="letter-date">Date</label><input id="letter-date" type="date" /></div>
+          </div>
+          <div class="field field-motif">
+            <label for="motif">Motif / précisions</label>
+            <textarea id="motif" name="motif" rows="4" autocomplete="off" autocorrect="on" spellcheck="true" placeholder="Tapez ici les faits, dates ou votre demande…"></textarea>
+          </div>
+          <div class="field hidden" id="fg-montant"><label for="montant">Montant <span style="font-weight:400">(€, si utile)</span></label><input id="montant" type="text" inputmode="decimal" placeholder="Ex. 49,90" /></div>
+          <div class="field hidden" id="fg-deadline"><label for="deadline">Délai souhaité / date limite <span style="font-weight:400">(optionnel)</span></label><input id="deadline" type="text" placeholder="Ex. sous 15 jours, le 30/06/2026…" /></div>
+
+          <h2>Ton</h2>
+          <div class="seg" id="tone-seg" role="tablist" aria-label="Ton de la lettre">
+            <button type="button" data-tone="poli" class="active">Poli</button>
+            <button type="button" data-tone="ferme">Ferme</button>
+            <button type="button" data-tone="formel">Formel</button>
+            <button type="button" data-tone="concis">Concis</button>
+          </div>
+
+          <h2>Signature</h2>
+          <p style="font-size:0.78rem;color:var(--ink-soft);margin:0 0 0.65rem;line-height:1.45">
+            Optionnel : image ou PDF (la première page est utilisée pour la signature), affichée au-dessus de votre nom en bas de lettre. Tout reste dans votre navigateur.
+          </p>
+          <div class="field">
+            <label for="signature-file">Image ou PDF de signature</label>
+            <input type="file" id="signature-file" accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" />
+          </div>
+          <div class="field hidden" id="signature-preview-wrap">
+            <img id="signature-preview" alt="" width="220" height="80" decoding="async" style="max-height:72px;max-width:220px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff;display:block" />
+            <button type="button" class="btn" id="signature-clear" style="margin-top:0.45rem">Retirer l’image</button>
+          </div>
+
+          <h2>Aperçu</h2>
+          <div class="preview-wrap">
+            <div class="preview-sheet" id="preview-scroll">
+              <div id="letter-sheet">
+                <div id="letter-inner"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary" id="btn-copy">Copier la lettre</button>
+            <button type="button" class="btn btn-primary" id="btn-pdf">Télécharger PDF</button>
+            <button type="button" class="btn" id="btn-print">Imprimer</button>
+            <button type="button" class="btn" id="btn-save">Enregistrer brouillon</button>
+            <button type="button" class="btn" id="btn-reset">Réinitialiser</button>
+          </div>
+          <p class="disclaimer" style="margin-top:1rem;border:none;padding:0">
+            Informations générales fournies à titre indicatif. Les règles peuvent varier selon votre contrat ou votre situation — vérifiez vos documents et, en cas de doute, un professionnel compétent.
+          </p>
+        </div>
+      </div>
+
+      <aside class="info-sticky" aria-labelledby="info-title">
+        <div class="info-card">
+          <h3 id="info-title">À savoir en France</h3>
+          <div id="info-body"></div>
+          <p class="disclaimer">
+            Rappels généraux : selon votre situation, les délais et obligations peuvent différer. En général, il est prudent de conserver une trace de vos échanges et de relire votre contrat ou règlement.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+(function () {
+  var STORAGE_KEY = "tramelle-lettres-v3";
+  var signatureDataUrl = null;
+  var MODELS = [
+    {
+      id: "resiliation_abonnement",
+      label: "Résiliation abonnement",
+      defaultObj: "Résiliation de mon abonnement",
+      info: [
+        "En général, vérifiez la durée d’engagement et les modalités de résiliation prévues dans le contrat.",
+        "Souvent, un courrier avec accusé de réception ou une trace d’envoi est utile pour garder une preuve.",
+        "Selon votre situation, une confirmation écrite de la part du prestataire peut être recommandée."
+      ]
+    },
+    {
+      id: "preavis_logement",
+      label: "Préavis logement",
+      defaultObj: "Donner congé pour mon logement",
+      info: [
+        "Souvent, le préavis pour une location vide est d’environ trois mois ; pour un meublé, il est fréquemment plus court — selon votre bail.",
+        "Certaines zones ou clauses particulières peuvent modifier le délai : vérifiez votre contrat de location.",
+        "Il est prudent de mentionner clairement les dates et de conserver une copie de votre courrier."
+      ]
+    },
+    {
+      id: "reclamation_colis",
+      label: "Réclamation colis non reçu",
+      defaultObj: "Réclamation — colis non reçu",
+      info: [
+        "En général, tant que la livraison n’est pas effectuée, le vendeur reste souvent interlocuteur pour la commande (selon le cas).",
+        "Vous pouvez demander une livraison ou, le cas échéant, un remboursement — conservez captures d’écran et échanges.",
+        "Selon votre situation, les transporteurs ou plateformes ont des procédures propres : suivez aussi leurs canaux."
+      ]
+    },
+    {
+      id: "remboursement",
+      label: "Demande remboursement",
+      defaultObj: "Demande de remboursement",
+      info: [
+        "Expliquez clairement le motif et joignez ou citez facture ou preuve d’achat si vous en avez une.",
+        "Indiquez souvent la date d’achat ou de commande pour faciliter le traitement.",
+        "Selon votre situation, les délais de réponse peuvent varier — une relance courtoise est souvent possible."
+      ]
+    },
+    {
+      id: "attestation_honneur",
+      label: "Attestation sur l’honneur",
+      defaultObj: "Attestation sur l’honneur",
+      info: [
+        "Ce type de document engage votre responsabilité sur l’exactitude des faits déclarés.",
+        "Vérifiez que chaque mention correspond à votre situation réelle.",
+        "Selon l’usage, le destinataire peut exiger des pièces complémentaires."
+      ]
+    },
+    {
+      id: "mise_en_demeure",
+      label: "Mise en demeure simple",
+      defaultObj: "Mise en demeure",
+      info: [
+        "Décrivez les faits avec précision et fixez un délai raisonnable pour réponse ou exécution, selon les usages.",
+        "Gardez une copie du courrier et tout justificatif utile.",
+        "Selon votre situation, un accompagnement juridique peut être pertinent pour les litiges sérieux."
+      ]
+    },
+    {
+      id: "lettre_employeur",
+      label: "Lettre employeur",
+      defaultObj: "Courrier à mon employeur",
+      info: [
+        "En général, un ton professionnel et une datation claire facilitent le traitement de votre demande.",
+        "Conservez une copie et, selon votre situation, un accusé de réception peut être utile.",
+        "Vérifiez les canaux internes (RH, intranet) prévus par votre entreprise."
+      ]
+    },
+    {
+      id: "nuisances_voisinage",
+      label: "Nuisances voisinage",
+      defaultObj: "Nuisances de voisinage",
+      info: [
+        "Souvent, un premier courrier courtois suffit à faire prendre conscience du problème.",
+        "Si les nuisances se répètent, conservez des éléments factuels (dates, nature des troubles).",
+        "Selon votre situation, la mairie ou des médiateurs peuvent être sollicités en complément."
+      ]
+    },
+    {
+      id: "banque_assurance",
+      label: "Banque / assurance",
+      defaultObj: "Demande concernant mon contrat",
+      info: [
+        "Citez la référence du contrat ou du dossier lorsqu’elle figure sur vos documents.",
+        "Demandez une réponse écrite et conservez les échanges.",
+        "Selon votre situation, les délais de traitement peuvent varier — relisez les conditions générales."
+      ]
+    },
+    {
+      id: "lettre_libre",
+      label: "Lettre libre personnalisée",
+      defaultObj: "Courrier",
+      info: [
+        "Restez factuel : dates, faits et demande précise.",
+        "En général, une structure claire (objet, contexte, demande) est plus lisible pour le destinataire.",
+        "Adaptez le ton au contexte (administratif, personnel, professionnel)."
+      ]
+    }
+  ];
+
+  var currentModel = MODELS[0].id;
+
+  function el(id) { return document.getElementById(id); }
+
+  function esc(s) {
+    if (s == null) return "";
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function escAttr(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
+  /** Retours à la ligne réels dans l’aperçu (ne pas mettre &lt;br/&gt; dans esc(), sinon le texte affiche « &lt;br/&gt; »). */
+  function escLines(s) {
+    if (!s) return "";
+    return s.split(/\n/).map(function (line) { return esc(line); }).join("<br/>");
+  }
+
+  function escLinesStrong(s) {
+    if (!s) return "";
+    return "<strong>" + escLines(s) + "</strong>";
+  }
+
+  /** Si le brouillon mélange un ancien « Objet » avec un autre modèle actif, on réaligne. */
+  function syncLetterObjWithModel() {
+    var mo = MODELS.find(function (x) { return x.id === currentModel; });
+    if (!mo) return;
+    var v = el("letter-obj").value.trim();
+    var byDefault = {};
+    MODELS.forEach(function (m) {
+      byDefault[m.defaultObj] = m.id;
+    });
+    if (!v) {
+      el("letter-obj").value = mo.defaultObj;
+      return;
+    }
+    var owner = byDefault[v];
+    if (owner && owner !== currentModel) {
+      el("letter-obj").value = mo.defaultObj;
+    }
+  }
+
+  function todayISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function tonePhrase(tone, kind) {
+    var T = {
+      poli: { open: "Je me permets de vous adresser ce courrier pour", end: "Je vous remercie par avance pour l’attention que vous voudrez bien porter à ma demande." },
+      ferme: { open: "Je vous écris afin de", end: "Je vous demande de bien vouloir répondre dans les meilleurs délais." },
+      formel: { open: "Je soussigné(e) vous adresse la présente afin de", end: "Veuillez agréer, Madame, Monsieur, l’expression de mes salutations distinguées." },
+      concis: { open: "Objet : demande concernant", end: "Cordialement." }
+    };
+    var t = T[tone] || T.poli;
+    if (kind === "open") return t.open;
+    return t.end;
+  }
+
+  function buildBody() {
+    var m = currentModel;
+    var tone = document.querySelector("#tone-seg .active").getAttribute("data-tone");
+    var motif = el("motif").value.trim();
+    var montant = el("montant").value.trim();
+    var deadline = el("deadline").value.trim();
+    var ref = el("ref-dossier").value.trim();
+    var lines = [];
+
+    function add(s) { if (s) lines.push(s); }
+
+    if (m === "resiliation_abonnement") {
+      add(tonePhrase(tone, "open") + " solliciter la résiliation de mon abonnement ou contrat.");
+      add("Motif et précisions : " + (motif || "—") + ".");
+      if (montant) add("Référence éventuelle de formule ou montant : " + montant + ".");
+      if (deadline) add("Je souhaite que la résiliation prenne effet : " + deadline + " — selon les conditions contractuelles applicables.");
+      if (ref) add("Référence client / dossier : " + ref + ".");
+      add("Je vous prie de m’adresser une confirmation écrite de la prise en compte de cette demande.");
+    } else if (m === "preavis_logement") {
+      add(tonePhrase(tone, "open") + " notifier mon départ du logement et le respect du préavis.");
+      add("Précisions : " + (motif || "—") + ".");
+      if (deadline) add("Date de sortie souhaitée ou fin de préavis : " + deadline + " — à rapprocher des clauses du bail.");
+      add("Je vous remercie de m’indiquer les démarches complémentaires éventuelles.");
+    } else if (m === "reclamation_colis") {
+      add(tonePhrase(tone, "open") + " signaler l’absence de livraison du colis concerné.");
+      add("Détail : " + (motif || "—") + ".");
+      if (ref) add("Numéro de suivi ou commande : " + ref + ".");
+      add("Je vous demande de m’informer des suites données (livraison ou remboursement selon les cas applicables).");
+    } else if (m === "remboursement") {
+      add(tonePhrase(tone, "open") + " obtenir le remboursement indiqué ci-dessous.");
+      add("Motif : " + (motif || "—") + ".");
+      if (montant) add("Montant demandé : " + montant + " € (selon facture ou situation).");
+      if (ref) add("Référence : " + ref + ".");
+      add("Je joins ou peux fournir tout justificatif utile sur demande.");
+    } else if (m === "attestation_honneur") {
+      add("Je déclare sur l’honneur les éléments suivants :");
+      add(motif || "—");
+      add("Je certifie sincères et exactes les informations portées ci-dessus, dans la mesure de ma connaissance.");
+    } else if (m === "mise_en_demeure") {
+      add(tonePhrase(tone, "open") + " vous mettre en demeure de satisfaire à la demande suivante.");
+      add("Faits : " + (motif || "—") + ".");
+      if (deadline) add("Délai souhaité pour réponse ou exécution : " + deadline + " — délai à adapter selon la gravité des faits.");
+      add("À défaut de réponse dans ce délai, je me réserve la possibilité d’engager d’autres démarches, selon les voies ouvertes.");
+    } else if (m === "lettre_employeur") {
+      add(tonePhrase(tone, "open") + " vous transmettre la demande suivante dans un cadre professionnel.");
+      add(motif || "—");
+      if (deadline) add("Échéance ou date souhaitée : " + deadline + ".");
+    } else if (m === "nuisances_voisinage") {
+      add(tonePhrase(tone, "open") + " vous signaler des nuisances ressenties.");
+      add("Description : " + (motif || "—") + ".");
+      add("Je vous remercie de votre compréhension et reste disponible pour un échange cordial afin de trouver une solution.");
+    } else if (m === "banque_assurance") {
+      add(tonePhrase(tone, "open") + " formuler la demande suivante concernant mon contrat ou mon dossier.");
+      add("Détail : " + (motif || "—") + ".");
+      if (ref) add("Référence contrat / dossier : " + ref + ".");
+      if (montant) add("Montant ou opération concernée : " + montant + ".");
+      add("Je vous prie de m’adresser une réponse écrite.");
+    } else {
+      add(tonePhrase(tone, "open") + " exposer les points suivants.");
+      add(motif || "—");
+      if (deadline) add("Délai ou modalité souhaité(e) : " + deadline + ".");
+    }
+
+    lines.push(tonePhrase(tone, "end"));
+    return lines.join("\n\n");
+  }
+
+  function fixLetterInnerEscaping() {
+    var inner = el("letter-inner");
+    var raw = buildBody();
+    var parts = raw.split("\n\n");
+    var sn = el("sender-name").value.trim();
+    var sa = el("sender-addr").value.trim();
+    var sc = el("sender-city").value.trim();
+    var senderBits = [];
+    if (sn) senderBits.push("<strong>" + esc(sn) + "</strong>");
+    if (sa) senderBits.push(escLinesStrong(sa));
+    if (sc) senderBits.push("<strong>" + esc(sc) + "</strong>");
+    var senderHtml = senderBits.join("<br/>");
+    var em = el("sender-email").value.trim();
+    var ph = el("sender-phone").value.trim();
+    var afterSender = senderBits.length > 0;
+    if (em || ph) {
+      senderHtml += afterSender ? "<br/><br/>" : "";
+      if (em) {
+        senderHtml += esc(em);
+      }
+      if (ph) {
+        senderHtml += (em ? "<br/>" : "") + esc(ph);
+      }
+    }
+
+    var rn = el("rec-name").value.trim();
+    var ra = el("rec-addr").value.trim();
+    var recBits = [];
+    if (rn) recBits.push("<strong>" + esc(rn) + "</strong>");
+    if (ra) recBits.push(escLinesStrong(ra));
+
+    var dt = el("letter-date").value;
+    var dateFr = dt
+      ? new Date(dt + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+      : new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    var cityLine = el("sender-city").value.trim() || "[lieu]";
+
+    var html = '<div class="letter-block">' + senderHtml + "</div>";
+    html +=
+      '<div style="margin-top:1.25rem;text-align:right;padding-right:4ch;box-sizing:border-box">';
+    if (recBits.length) {
+      html += '<div class="letter-block" style="margin:0;text-align:right">' + recBits.join("<br/>") + "</div>";
+      html += '<div style="min-height:2lh" aria-hidden="true"></div>';
+    }
+    html +=
+      '<p class="letter-block" style="margin-top:' +
+      (recBits.length ? "0" : "1rem") +
+      ';margin-bottom:0;text-align:right">À ' +
+      esc(cityLine) +
+      ", le " +
+      esc(dateFr) +
+      "</p>" +
+      "</div>";
+    html += '<p class="letter-obj" style="margin:4lh 0 0.75rem">Objet : ' + esc(el("letter-obj").value.trim() || "—") + "</p>";
+    html += '<div class="letter-block" style="margin-top:3lh">Madame, Monsieur,</div>';
+    parts.forEach(function (p) {
+      html += '<p class="letter-block" style="margin:0.65rem 0">' + esc(p).replace(/\n/g, "<br/>") + "</p>";
+    });
+    html += '<div class="letter-block" style="margin-top:1.25rem">';
+    if (signatureDataUrl) {
+      html += '<img src="' + escAttr(signatureDataUrl) + '" alt="" class="letter-signature-img" />';
+    }
+    html += esc(el("sender-name").value.trim() || "[Signature]") + "</div>";
+    inner.innerHTML = html;
+  }
+
+  function render() {
+    syncLetterObjWithModel();
+    fixLetterInnerEscaping();
+    renderInfo();
+    updateFieldVisibility();
+  }
+
+  function renderInfo() {
+    var model = MODELS.find(function (x) { return x.id === currentModel; });
+    if (!model) return;
+    el("info-body").innerHTML = "<ul>" + model.info.map(function (line) { return "<li>" + esc(line) + "</li>"; }).join("") + "</ul>";
+  }
+
+  function updateFieldVisibility() {
+    var m = currentModel;
+    el("fg-ref").classList.toggle("hidden", m === "lettre_libre");
+    el("fg-montant").classList.toggle(
+      "hidden",
+      ["remboursement", "resiliation_abonnement", "banque_assurance"].indexOf(m) < 0
+    );
+    el("fg-deadline").classList.toggle("hidden", m === "attestation_honneur");
+  }
+
+  function getFullText() {
+    return el("letter-inner").innerText;
+  }
+
+  function wireModelGrid() {
+    var g = el("model-grid");
+    MODELS.forEach(function (model) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "model-btn" + (model.id === currentModel ? " active" : "");
+      b.textContent = model.label;
+      b.setAttribute("data-model", model.id);
+      b.addEventListener("click", function () {
+        currentModel = model.id;
+        g.querySelectorAll(".model-btn").forEach(function (x) {
+          x.classList.toggle("active", x.getAttribute("data-model") === currentModel);
+        });
+        var mo = MODELS.find(function (x) { return x.id === currentModel; });
+        if (mo) el("letter-obj").value = mo.defaultObj;
+        render();
+      });
+      g.appendChild(b);
+    });
+  }
+
+  document.querySelectorAll("#tone-seg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#tone-seg button").forEach(function (b) {
+        b.classList.toggle("active", b === btn);
+      });
+      render();
+    });
+  });
+
+  [
+    "sender-name",
+    "sender-addr",
+    "sender-city",
+    "sender-email",
+    "sender-phone",
+    "rec-name",
+    "rec-addr",
+    "ref-dossier",
+    "letter-obj",
+    "letter-date",
+    "motif",
+    "montant",
+    "deadline"
+  ].forEach(function (id) {
+    var n = el(id);
+    if (n) {
+      n.addEventListener("input", render);
+      n.addEventListener("change", render);
+    }
+  });
+
+  function ensurePdfJsWorker() {
+    var lib = window.pdfjsLib;
+    if (lib && lib.GlobalWorkerOptions) {
+      lib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+    return lib;
+  }
+
+  function pdfFirstPageToDataUrl(file, onOk, onErr) {
+    var pdfjsLib = ensurePdfJsWorker();
+    if (!pdfjsLib || !pdfjsLib.getDocument) {
+      onErr("Bibliothèque PDF non chargée. Actualisez la page.");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var data = new Uint8Array(reader.result);
+      pdfjsLib
+        .getDocument({ data: data })
+        .promise.then(function (pdf) {
+          if (pdf.numPages < 1) throw new Error("empty");
+          return pdf.getPage(1);
+        })
+        .then(function (page) {
+          var base = page.getViewport({ scale: 1 });
+          var maxW = 320;
+          var scale = Math.min(2.5, maxW / Math.max(base.width, 1));
+          var viewport = page.getViewport({ scale: scale });
+          var canvas = document.createElement("canvas");
+          var ctx = canvas.getContext("2d");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function () {
+            return canvas.toDataURL("image/jpeg", 0.88);
+          });
+        })
+        .then(onOk)
+        .catch(function () {
+          onErr("Impossible d’extraire la première page de ce PDF.");
+        });
+    };
+    reader.onerror = function () {
+      onErr("Lecture du fichier impossible.");
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  el("signature-file").addEventListener("change", function () {
+    var input = this;
+    var f = input.files && input.files[0];
+    if (!f) {
+      signatureDataUrl = null;
+      el("signature-preview").removeAttribute("src");
+      el("signature-preview-wrap").classList.add("hidden");
+      render();
+      return;
+    }
+
+    var isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+
+    if (isPdf) {
+      if (f.size > 4 * 1024 * 1024) {
+        toast("PDF trop lourd (maximum 4 Mo)");
+        input.value = "";
+        return;
+      }
+      toast("Conversion du PDF…");
+      pdfFirstPageToDataUrl(
+        f,
+        function (dataUrl) {
+          signatureDataUrl = dataUrl;
+          el("signature-preview").src = signatureDataUrl;
+          el("signature-preview-wrap").classList.remove("hidden");
+          render();
+          toast("Signature prête");
+        },
+        function (msg) {
+          toast(msg);
+          input.value = "";
+        }
+      );
+      return;
+    }
+
+    if (f.size > 600 * 1024) {
+      toast("Image trop lourde (maximum environ 600 Ko)");
+      input.value = "";
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      signatureDataUrl = reader.result;
+      el("signature-preview").src = signatureDataUrl;
+      el("signature-preview-wrap").classList.remove("hidden");
+      render();
+    };
+    reader.onerror = function () {
+      toast("Lecture du fichier impossible");
+    };
+    reader.readAsDataURL(f);
+  });
+
+  el("signature-clear").addEventListener("click", function () {
+    signatureDataUrl = null;
+    el("signature-file").value = "";
+    el("signature-preview").removeAttribute("src");
+    el("signature-preview-wrap").classList.add("hidden");
+    render();
+  });
+
+  el("btn-copy").addEventListener("click", function () {
+    var t = getFullText();
+    navigator.clipboard.writeText(t).then(
+      function () { toast("Lettre copiée"); },
+      function () { toast("Copie impossible"); }
+    );
+  });
+
+  el("btn-print").addEventListener("click", function () {
+    window.print();
+  });
+
+  el("btn-reset").addEventListener("click", function () {
+    if (!confirm("Réinitialiser le formulaire ?")) return;
+    el("sender-name").value = "";
+    el("sender-addr").value = "";
+    el("sender-city").value = "";
+    el("sender-email").value = "";
+    el("sender-phone").value = "";
+    el("rec-name").value = "";
+    el("rec-addr").value = "";
+    el("ref-dossier").value = "";
+    el("letter-obj").value = MODELS.find(function (x) { return x.id === currentModel; }).defaultObj;
+    el("letter-date").value = todayISO();
+    el("motif").value = "";
+    el("montant").value = "";
+    el("deadline").value = "";
+    signatureDataUrl = null;
+    el("signature-file").value = "";
+    el("signature-preview").removeAttribute("src");
+    el("signature-preview-wrap").classList.add("hidden");
+    render();
+    toast("Formulaire réinitialisé");
+  });
+
+  el("btn-save").addEventListener("click", function () {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      toast("Brouillon enregistré");
+    } catch (e) {
+      toast("Enregistrement impossible");
+    }
+  });
+
+  function getState() {
+    return {
+      model: currentModel,
+      tone: document.querySelector("#tone-seg .active").getAttribute("data-tone"),
+      senderName: el("sender-name").value,
+      senderAddr: el("sender-addr").value,
+      senderCity: el("sender-city").value,
+      senderEmail: el("sender-email").value,
+      senderPhone: el("sender-phone").value,
+      recName: el("rec-name").value,
+      recAddr: el("rec-addr").value,
+      ref: el("ref-dossier").value,
+      letterObj: el("letter-obj").value,
+      letterDate: el("letter-date").value,
+      motif: el("motif").value,
+      montant: el("montant").value,
+      deadline: el("deadline").value,
+      signatureImage:
+        signatureDataUrl && signatureDataUrl.length < 480000 ? signatureDataUrl : null
+    };
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (s.model) {
+        currentModel = s.model;
+        el("model-grid").querySelectorAll(".model-btn").forEach(function (x) {
+          x.classList.toggle("active", x.getAttribute("data-model") === currentModel);
+        });
+      }
+      if (s.tone) {
+        document.querySelectorAll("#tone-seg button").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-tone") === s.tone);
+        });
+      }
+      el("sender-name").value = s.senderName || "";
+      el("sender-addr").value = s.senderAddr || "";
+      el("sender-city").value = s.senderCity || "";
+      el("sender-email").value = s.senderEmail || "";
+      el("sender-phone").value = s.senderPhone || "";
+      el("rec-name").value = s.recName || "";
+      el("rec-addr").value = s.recAddr || "";
+      el("ref-dossier").value = s.ref || "";
+      el("letter-obj").value = s.letterObj || "";
+      el("letter-date").value = s.letterDate || todayISO();
+      el("motif").value = s.motif || "";
+      el("montant").value = s.montant || "";
+      el("deadline").value = s.deadline || "";
+      signatureDataUrl = s.signatureImage && s.signatureImage.length < 480000 ? s.signatureImage : null;
+      if (signatureDataUrl) {
+        el("signature-preview").src = signatureDataUrl;
+        el("signature-preview-wrap").classList.remove("hidden");
+      } else {
+        el("signature-preview").removeAttribute("src");
+        el("signature-preview-wrap").classList.add("hidden");
+        el("signature-file").value = "";
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function toast(msg) {
+    var t = el("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.classList.remove("show"); }, 2400);
+  }
+
+  function downloadPdf() {
+    var node = el("letter-sheet");
+    var btn = el("btn-pdf");
+    btn.disabled = true;
+    if (!window.html2canvas || !window.jspdf) {
+      toast("Bibliothèques PDF non chargées");
+      btn.disabled = false;
+      return;
+    }
+    var prev = { minHeight: node.style.minHeight, maxHeight: node.style.maxHeight, overflow: node.style.overflow, height: node.style.height };
+    node.style.minHeight = "297mm";
+    node.style.maxHeight = "none";
+    node.style.height = "auto";
+    node.style.overflow = "visible";
+    void node.offsetHeight;
+    html2canvas(node, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" })
+      .then(function (canvas) {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+        var pageW = pdf.internal.pageSize.getWidth();
+        var pageH = pdf.internal.pageSize.getHeight();
+        var marginMm = 5;
+        var innerW = pageW - 2 * marginMm;
+        var innerH = pageH - 2 * marginMm;
+        var img = canvas.toDataURL("image/jpeg", 0.92);
+        var imgProps = pdf.getImageProperties(img);
+        var ratio = Math.min(innerW / imgProps.width, innerH / imgProps.height);
+        var iw = imgProps.width * ratio;
+        var ih = imgProps.height * ratio;
+        var x = marginMm + (innerW - iw) / 2;
+        var y = marginMm;
+        pdf.addImage(img, "JPEG", x, y, iw, ih);
+        pdf.save("lettre-tramelle.pdf");
+        toast("PDF téléchargé");
+      })
+      .catch(function () { toast("Erreur PDF"); })
+      .finally(function () {
+        node.style.minHeight = prev.minHeight;
+        node.style.maxHeight = prev.maxHeight;
+        node.style.overflow = prev.overflow;
+        node.style.height = prev.height;
+        btn.disabled = false;
+      });
+  }
+
+  el("btn-pdf").addEventListener("click", downloadPdf);
+
+  function debounce(fn, ms) {
+    var h;
+    return function () {
+      clearTimeout(h);
+      h = setTimeout(fn, ms);
+    };
+  }
+
+  wireModelGrid();
+  if (!loadState()) {
+    el("letter-date").value = todayISO();
+    el("letter-obj").value = MODELS[0].defaultObj;
+  }
+  render();
+
+  el("letter-form-root").addEventListener(
+    "input",
+    debounce(function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      } catch (e) {}
+    }, 800)
+  );
+})();
+  </script>
+</body>
+</html>

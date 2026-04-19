@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:firebase-rules": "npx --yes firebase-tools@latest deploy --only firestore:rules,storage",
+    "vercel:push-resend": "node scripts/push-resend-env-vercel.cjs"
   },
   "dependencies": {
     "firebase": "^12.11.0",

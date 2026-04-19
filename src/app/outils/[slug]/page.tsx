@@ -37,11 +37,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const outil = getOutilBySlug(slug);
   if (!outil) return { title: "Outil introuvable" };
   const url = `${getSiteUrl()}/outils/${slug}`;
+  const seoOverride =
+    slug === "generateur-devis-facture-instantane"
+      ? {
+          title: "Générateur de devis & facture instantané gratuit | Tramelle",
+          description:
+            "Créez en ligne vos devis sans inscription, factures et factures d’acompte : client, prestations, quantité, prix, remise et TVA. Calculs automatiques, brouillon dans le navigateur, PDF immédiat.",
+        }
+      : slug === "generateur-lettres-gratuites-instantane"
+        ? {
+            title: "Générateur de lettres gratuites instantané | Tramelle",
+            description:
+              "Créez gratuitement vos lettres en ligne : résiliation abonnement, préavis logement, réclamation colis, remboursement, attestation, mise en demeure, banque, assurance. Générateur de lettres gratuit avec PDF, aperçu direct et sans inscription sur Tramelle.fr.",
+          }
+        : null;
   return {
-    title: outil.title,
-    description: outil.description,
+    title: seoOverride?.title ?? outil.title,
+    description: seoOverride?.description ?? outil.description,
     alternates: { canonical: `/outils/${slug}` },
-    openGraph: { url, title: `${outil.title} — Tramelle`, description: outil.tagline },
+    openGraph: {
+      url,
+      title: seoOverride ? seoOverride.title : `${outil.title} — Tramelle`,
+      description: seoOverride?.description ?? outil.tagline,
+    },
   };
 }
 
@@ -49,7 +67,12 @@ function ToolBody({ slug }: { slug: string }) {
   const outil = getOutilBySlug(slug);
   if (!outil) return null;
   if (outil.embedUrl) {
-    return <EmbeddedTool src={outil.embedUrl} title={outil.title} />;
+    const sameOrigin = outil.embedUrl.startsWith("/");
+    const tallEmbed =
+      slug === "generateur-devis-facture-instantane" || slug === "generateur-lettres-gratuites-instantane";
+    return (
+      <EmbeddedTool src={outil.embedUrl} title={outil.title} sameOrigin={sameOrigin} tall={tallEmbed} />
+    );
   }
   if (outil.externalUrl) {
     return <ExternalToolLinkout href={outil.externalUrl} title={outil.title} />;
@@ -91,10 +114,16 @@ export default async function OutilPage({ params }: Props) {
         {tools.length === 0 ? (
           <p className="text-sm text-ink/60">Aucun outil dans cette categorie pour le moment.</p>
         ) : (
-          <ul className="grid gap-5 sm:grid-cols-2">
+          <ul className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             {tools.map((tool) => (
               <li key={tool.slug}>
-                <ContentCard href={`/outils/${tool.slug}`} title={tool.title} description={tool.tagline} strongTeaser />
+                <ContentCard
+                  href={`/outils/${tool.slug}`}
+                  title={tool.title}
+                  description={tool.tagline}
+                  strongTeaser
+                  outilTitle
+                />
               </li>
             ))}
           </ul>
@@ -109,7 +138,7 @@ export default async function OutilPage({ params }: Props) {
   const body = ToolBody({ slug });
   if (!body) notFound();
 
-  const isEmbedded = Boolean(outil.embedUrl);
+  const embeddedRemote = Boolean(outil.embedUrl && !outil.embedUrl.startsWith("/"));
   const isExternal = Boolean(outil.externalUrl);
 
   return (
@@ -132,7 +161,7 @@ export default async function OutilPage({ params }: Props) {
           <li aria-hidden className="text-ink/35">
             /
           </li>
-          <li className="text-ink/80">{outil.title}</li>
+          <li className="font-medium text-outil-title">{outil.title}</li>
         </ol>
       </nav>
       <p className="mb-6 text-sm font-bold text-terracotta">
@@ -152,7 +181,7 @@ export default async function OutilPage({ params }: Props) {
       >
         {body}
       </ToolShell>
-      {isEmbedded ? (
+      {embeddedRemote ? (
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-ink/55">
           Cet outil est affiché dans un cadre fourni par un service externe : disponibilité et temps de premier chargement
           dépendent de ce service.

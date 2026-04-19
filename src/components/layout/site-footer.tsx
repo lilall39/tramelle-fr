@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { brand, siteDomain, siteName } from "@/lib/site";
+import { homeBodyProseSizeClass } from "@/lib/home-body-prose";
+import { siteDomain, siteName } from "@/lib/site";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -8,13 +9,16 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 py-14 sm:flex-row sm:items-start sm:justify-between sm:py-16">
         <div className="max-w-md space-y-3">
           <p className="font-editorial-serif text-xl font-medium text-ink">{siteName}</p>
-          <p className="text-sm font-bold italic leading-relaxed text-terracotta/80">{brand.subtitle}</p>
-          <p className="text-sm leading-relaxed text-ink/65">
-            Un site personnel tenu comme une petite revue : l’outil au service du texte, le texte au service de la
-            clarté — en français, pour durer.
+          <p className={`${homeBodyProseSizeClass} font-bold italic text-terracotta/80`}>
+            Outils en ligne gratuits, textes posés, annonces accessibles à tous.
+          </p>
+          <p className={`${homeBodyProseSizeClass} text-ink/65`}>
+            Un site pensé comme une petite revue : des applications utiles au quotidien, des articles faits pour durer,
+            et la possibilité de publier des annonces ou des contenus simplement, sans inscription — l’outil au service
+            du texte, le texte au service de la clarté.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-sm text-ink/60">
+        <div className={`flex flex-col gap-4 ${homeBodyProseSizeClass} text-ink/60`}>
           <span className="font-mono text-xs uppercase tracking-wider text-ink/45">{siteDomain}</span>
           <nav className="flex flex-col gap-2" aria-label="Liens de pied de page">
             <Link href="/articles" className="w-fit text-ink/75 underline-offset-4 transition-colors hover:text-accent hover:underline">

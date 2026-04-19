@@ -1,5 +1,6 @@
 import type { PublicSubmission } from "@/types/community";
 import { getSiteUrl } from "@/lib/site";
+import { getSubmissionHeroImageUrl } from "@/lib/community/submission-images";
 
 /**
  * TODO: garder aligné avec la route App Router (`app/publications/[id]/page.tsx`) si le segment d’URL change.
@@ -23,11 +24,9 @@ export function buildPublicUrl(submission: Pick<PublicSubmission, "id">): string
   return `${getBaseUrl()}${publicationPathSegment(submission.id)}`;
 }
 
-/** Même logique visuelle que `PublicationDetailClient` (image principale / couverture article). */
+/** Même logique visuelle que `PublicationDetailClient` (image principale / couverture article / 1ʳᵉ photo annonce). */
 function heroImageUrl(submission: PublicSubmission): string | null {
-  return submission.category === "article"
-    ? submission.coverImage ?? submission.imageUrl
-    : submission.imageUrl;
+  return getSubmissionHeroImageUrl(submission);
 }
 
 function absoluteImageUrl(submission: PublicSubmission, baseUrl: string): string {

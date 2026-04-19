@@ -1,16 +1,15 @@
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { PageContainer } from "@/components/layout/page-container";
-import { getAllBilletSlugs, getBilletBySlug } from "@/lib/content/billets";
+import { getBilletBySlug } from "@/lib/content/billets";
+import { isEditorialPubliclyVisibleServer } from "@/lib/server/editorial-pages";
 import { getSiteUrl } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-type Props = { params: Promise<{ slug: string }> };
+export const dynamic = "force-dynamic";
 
-export async function generateStaticParams() {
-  return getAllBilletSlugs().map((slug) => ({ slug }));
-}
+type Props = { params: Promise<{ slug: string }> };
 
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -24,6 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const billet = getBilletBySlug(slug);
   if (!billet) return { title: "Billet introuvable" };
+  const visible = await isEditorialPubliclyVisibleServer("billet", slug);
+  if (!visible) return { title: "Page non disponible", robots: { index: false, follow: false } };
   const first = billet.blocks.find((b) => b.type === "p");
   const desc = first && first.type === "p" ? first.text.slice(0, 155) + (first.text.length > 155 ? "…" : "") : billet.title;
   const url = `${getSiteUrl()}/billets/${slug}`;
@@ -39,6 +40,8 @@ export default async function BilletPage({ params }: Props) {
   const { slug } = await params;
   const billet = getBilletBySlug(slug);
   if (!billet) notFound();
+  const visible = await isEditorialPubliclyVisibleServer("billet", slug);
+  if (!visible) notFound();
 
   return (
     <PageContainer>

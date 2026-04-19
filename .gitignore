@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+# Clé compte de service Firebase (ne jamais versionner)
+*projet.json
 
 # debug
 npm-debug.log*

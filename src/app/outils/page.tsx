@@ -1,8 +1,8 @@
 import { PageContainer } from "@/components/layout/page-container";
-import { ContentCard } from "@/components/ui/content-card";
+import { OutilsCategoryPanels } from "@/components/tools/outils-category-panels";
 import { PageIntro } from "@/components/ui/page-intro";
-import { getToolsByCategory, outilCategories } from "@/lib/content/outils";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Outils",
@@ -12,30 +12,25 @@ export const metadata: Metadata = {
 };
 
 export default function OutilsIndexPage() {
-  const categories = outilCategories.map((category) => ({
-    ...category,
-    toolCount: getToolsByCategory(category.id).length,
-  }));
-
   return (
     <PageContainer>
       <PageIntro
         eyebrow="Pratique"
         title="Outils"
-        intro="Choisissez une categorie pour parcourir les outils. Chaque outil reste accessible avec son adresse directe."
+        intro="Utilitaires et outils gratuits sans inscription : créez en ligne vos devis, factures, lettres, documents PDF, générateurs pratiques et services instantanés. Rapide, simple et gratuit."
       />
-      <ul className="grid gap-5 sm:grid-cols-2">
-        {categories.map((category) => (
-          <li key={category.id}>
-            <ContentCard
-              href={`/outils/${category.id}`}
-              title={category.label}
-              description={`${category.description} (${category.toolCount} outil${category.toolCount > 1 ? "s" : ""})`}
-              strongTeaser
-            />
-          </li>
-        ))}
-      </ul>
+      <p className="mb-8 rounded-xl border border-terracotta/25 bg-terracotta/[0.06] px-4 py-3 text-sm leading-relaxed text-ink/85">
+        <span className="font-bold text-terracotta">Nouveau —</span>{" "}
+        <Link
+          href="/outils/generateur-devis-facture-instantane"
+          className="font-bold text-ink underline decoration-terracotta/40 underline-offset-2 transition hover:text-terracotta"
+        >
+          Générateur de devis &amp; facture instantané
+        </Link>{" "}
+        (devis, factures, acomptes, PDF — sans inscription). Il figure aussi sous{" "}
+        <strong className="font-semibold text-ink">Utilitaires</strong> une fois la section dépliée.
+      </p>
+      <OutilsCategoryPanels />
     </PageContainer>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { brand, siteDomain } from "@/lib/site";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AuthLinks } from "@/components/layout/auth-links";
 
@@ -43,14 +43,14 @@ export function SiteHeader() {
           <div className="flex items-start justify-between gap-4 md:block md:max-w-md">
             <Link
               href="/"
-              className="group inline-flex max-w-md flex-col gap-1.5 transition-opacity hover:opacity-90"
+              className="group inline-flex max-w-md flex-col gap-1.5 underline-offset-4 transition-colors"
               aria-label={`${brand.kicker}, accueil`}
               onClick={() => setMenuOpen(false)}
             >
-              <span className="font-editorial-serif text-[1.75rem] font-bold leading-none tracking-tight text-ink md:text-[1.95rem]">
+              <span className="font-editorial-serif text-[1.75rem] font-bold leading-none tracking-tight text-terracotta transition-colors group-hover:text-ink md:text-[1.95rem]">
                 {brand.kicker}
               </span>
-              <span className="text-[0.8rem] font-bold uppercase tracking-[0.28em] text-ink/55">
+              <span className="text-[0.8rem] font-bold uppercase tracking-[0.28em] text-terracotta/75 transition-colors group-hover:text-ink/65">
                 {siteDomain}
               </span>
             </Link>
@@ -125,7 +125,15 @@ export function SiteHeader() {
               ·
             </span>
             <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:gap-x-1">
-              <AuthLinks onNavigate={() => setMenuOpen(false)} />
+              <Suspense
+                fallback={
+                  <span className="px-3 py-3 text-sm text-ink/45 md:py-1.5" aria-hidden>
+                    …
+                  </span>
+                }
+              >
+                <AuthLinks onNavigate={() => setMenuOpen(false)} />
+              </Suspense>
             </div>
           </nav>
         </div>

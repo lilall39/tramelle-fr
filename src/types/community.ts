@@ -8,7 +8,7 @@ export type SubmissionCategory = "annonce" | "service" | "vente" | "don" | "arti
 
 export type SubmissionStatus = "pending" | "approved" | "rejected" | "deleted";
 
-export type ContactMessageStatus = "new" | "read" | "archived";
+export type ContactMessageStatus = "new" | "read" | "archived" | "transmitted" | "rejected";
 
 export type CommunityUser = {
   uid: string;
@@ -34,7 +34,9 @@ export type Submission = {
   description: string;
   city: string;
   imageUrl: string | null;
-  /** vente */
+  /** Annonces uniquement : jusqu’à 4 URLs (Storage). La première redouble `imageUrl` pour compatibilité. */
+  imageUrls?: string[] | null;
+  /** vente (obligatoire métier à 0 si vide) · annonce (optionnel, affiché si renseigné) */
   price?: number;
   condition?: string;
   deliveryMode?: string;
@@ -61,6 +63,8 @@ export type ContactMessage = {
   message: string;
   createdAt: Timestamp;
   status: ContactMessageStatus;
+  /** Renseigné lorsque le message a été transmis à l’annonceur par e-mail. */
+  transmittedAt?: Timestamp;
 };
 
 /** Vue publique (sans champs privés). */
