@@ -1,8 +1,7 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { ContentCard } from "@/components/ui/content-card";
 import { PageIntro } from "@/components/ui/page-intro";
-import { articles } from "@/lib/content/articles";
-import { getNonLiveEditorialSlugsServer } from "@/lib/server/editorial-pages";
+import { getPublicArticlesResolvedServer } from "@/lib/server/editorial-pages";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -23,10 +22,8 @@ function formatDate(iso: string) {
 }
 
 export default async function ArticlesIndexPage() {
-  const excluded = await getNonLiveEditorialSlugsServer("article");
-  const sorted = [...articles]
-    .filter((a) => !excluded.has(a.slug))
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  const resolved = await getPublicArticlesResolvedServer();
+  const sorted = [...resolved].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
   return (
     <PageContainer>

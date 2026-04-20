@@ -1,7 +1,6 @@
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { PageContainer } from "@/components/layout/page-container";
-import { getArticleBySlug } from "@/lib/content/articles";
-import { isEditorialPubliclyVisibleServer } from "@/lib/server/editorial-pages";
+import { getPublicArticleResolvedServer } from "@/lib/server/editorial-pages";
 import { getSiteUrl } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -21,10 +20,8 @@ function formatDate(iso: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
-  if (!article) return { title: "Article introuvable" };
-  const visible = await isEditorialPubliclyVisibleServer("article", slug);
-  if (!visible) return { title: "Page non disponible", robots: { index: false, follow: false } };
+  const article = await getPublicArticleResolvedServer(slug);
+  if (!article) return { title: "Page non disponible", robots: { index: false, follow: false } };
   const url = `${getSiteUrl()}/articles/${slug}`;
   return {
     title: article.title,
@@ -44,10 +41,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPublicArticleResolvedServer(slug);
   if (!article) notFound();
-  const visible = await isEditorialPubliclyVisibleServer("article", slug);
-  if (!visible) notFound();
 
   return (
     <PageContainer>

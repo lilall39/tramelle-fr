@@ -1,8 +1,8 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { ContentCard } from "@/components/ui/content-card";
 import { PageIntro } from "@/components/ui/page-intro";
-import { billets } from "@/lib/content/billets";
-import { getNonLiveEditorialSlugsServer } from "@/lib/server/editorial-pages";
+import type { BilletFrontMatter } from "@/lib/content/types";
+import { getPublicBilletsResolvedServer } from "@/lib/server/editorial-pages";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
-function teaserFromBlocks(blocks: (typeof billets)[0]["blocks"]): string {
+function teaserFromBlocks(blocks: BilletFrontMatter["blocks"]): string {
   const first = blocks.find((b) => b.type === "p");
   if (!first || first.type !== "p") return "";
   const text = first.text;
@@ -31,10 +31,8 @@ function teaserFromBlocks(blocks: (typeof billets)[0]["blocks"]): string {
 }
 
 export default async function BilletsIndexPage() {
-  const excluded = await getNonLiveEditorialSlugsServer("billet");
-  const sorted = [...billets]
-    .filter((b) => !excluded.has(b.slug))
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  const resolved = await getPublicBilletsResolvedServer();
+  const sorted = [...resolved].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
   return (
     <PageContainer>

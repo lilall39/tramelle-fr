@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   type ShareableSubmission,
 } from "../../../core/share/generateShareContent";
 import { buildShareUrl, type SharePlatform } from "../../../core/share/shareUrls";
+import { buildVintedDraftText, VINTED_FR_NEW_LISTING_URL } from "../../../core/share/vintedDraft";
 import { getSubmissionGalleryUrls, getSubmissionHeroImageUrl } from "@/lib/community/submission-images";
 import { PublicationMediaOrBanner } from "@/components/community/publication-detail/publication-media-or-banner";
 import { PublicationJsonLd } from "@/components/community/publication-detail/publication-json-ld";
@@ -142,6 +143,8 @@ export function PublicationDetailClient({ id }: Props) {
   const [shareText, setShareText] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [shareImage, setShareImage] = useState<string | null>(null);
+  const [instagramNotice, setInstagramNotice] = useState<string | null>(null);
+  const [vintedNotice, setVintedNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,8 +192,67 @@ export function PublicationDetailClient({ id }: Props) {
     setShareUrl(pageUrl);
     const img = previewImageUrl(submission);
     setShareImage(img ? toAbsoluteUrlOnSite(img) : null);
+    setInstagramNotice(null);
+    setVintedNotice(null);
     setIsShareOpen(true);
   }
+
+  const assistInstagramShare = useCallback(async (): Promise<void> => {
+    let textCopied = false;
+    let imageCopied = false;
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      textCopied = true;
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (shareImage) {
+      try {
+        const res = await fetch(shareImage, { mode: "cors" });
+        if (res.ok) {
+          const blob = await res.blob();
+          const type = blob.type && /^image\//i.test(blob.type) ? blob.type : "image/png";
+          await navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+          imageCopied = true;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (textCopied && imageCopied) {
+      setInstagramNotice("Texte et image copiés. Instagram s’ouvre : collez puis publiez.");
+    } else if (textCopied) {
+      setInstagramNotice("Texte copié. Instagram s’ouvre : ajoutez l’image, puis collez le texte.");
+    } else if (imageCopied) {
+      setInstagramNotice("Image copiée. Instagram s’ouvre : complétez le texte à la main.");
+    } else {
+      setInstagramNotice("Instagram s’ouvre. Si besoin, utilisez les boutons « Copier le texte » et « Copier l’image ».");
+    }
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    window.setTimeout(() => setInstagramNotice(null), 12000);
+  }, [shareImage, shareText]);
+
+  const assistVintedListing = useCallback(async (): Promise<void> => {
+    if (data === undefined || data === null) return;
+    try {
+      const draft = buildVintedDraftText(data, shareUrl);
+      await navigator.clipboard.writeText(draft);
+      setVintedNotice(
+        "Texte copié dans le presse-papiers. La page Vinted « vendre » s’ouvre : collez le titre puis la description, ajoutez vos photos.",
+      );
+      window.open(VINTED_FR_NEW_LISTING_URL, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => setVintedNotice(null), 12000);
+    } catch (e) {
+      console.error(e);
+      setVintedNotice(
+        "Ouverture de Vinted quand même — copiez le texte à la main depuis la zone « Texte à partager » si le presse-papiers est refusé.",
+      );
+      window.open(VINTED_FR_NEW_LISTING_URL, "_blank", "noopener,noreferrer");
+    }
+  }, [data, shareUrl]);
 
   async function copyModalText(): Promise<void> {
     try {
@@ -607,12 +669,47 @@ export function PublicationDetailClient({ id }: Props) {
                     </button>
                     <button
                       type="button"
+                      onClick={() => void assistInstagramShare()}
+                      className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
+                    >
+                      Instagram
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openSharePlatform(shareText, shareUrl, "email")}
                       className="rounded-md border border-ink/[0.15] bg-white px-3 py-1.5 text-xs font-bold text-ink transition hover:border-terracotta/50 hover:text-terracotta dark:border-ink/[0.2] dark:bg-paper-elevated"
                     >
                       E-mail
                     </button>
                   </div>
+                  <p className="mt-2 text-[0.72rem] leading-relaxed text-ink/50">
+                    Instagram n’accepte pas le pré-remplissage complet depuis un site externe : copiez le texte et l’image
+                    ci-dessus puis collez-les dans votre publication Instagram.
+                  </p>
+                  {instagramNotice ? (
+                    <p className="mt-2 text-xs font-bold leading-snug text-emerald-800 dark:text-emerald-300/90">
+                      {instagramNotice}
+                    </p>
+                  ) : null}
+
+                  <p className="mt-4 text-xs font-bold uppercase tracking-wider text-ink/45">Vinted</p>
+                  <p className="mt-2 text-xs leading-relaxed text-ink/55">
+                    Vinted ne propose pas d’import automatique depuis un site. Nous préparons un texte (titre, détails, lien
+                    Tramelle) et ouvrons la page pour déposer une annonce : il reste à choisir la catégorie, la marque sur
+                    Vinted et à ajouter les photos (téléchargez-les depuis Tramelle si besoin).
+                  </p>
+                  {vintedNotice ? (
+                    <p className="mt-2 text-xs font-bold leading-snug text-emerald-800 dark:text-emerald-300/90">
+                      {vintedNotice}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void assistVintedListing()}
+                    className="mt-3 w-full rounded-lg border border-terracotta/45 bg-terracotta/12 px-4 py-2.5 text-center text-xs font-bold text-ink transition hover:bg-terracotta/20 dark:border-terracotta/35 dark:bg-terracotta/15"
+                  >
+                    Vinted — copier le texte et ouvrir « Vendre »
+                  </button>
 
                   <div className="mt-6 flex justify-end">
                     <button

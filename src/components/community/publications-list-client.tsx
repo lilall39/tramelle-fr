@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { PublicSubmission, SubmissionCategory } from "@/types/community";
 import { listApprovedPublications } from "@/lib/community/submissions";
 import { PublicationCard } from "@/components/community/publication-card";
@@ -86,6 +87,12 @@ export function PublicationsListClient() {
             {CATEGORY_LABELS[cat]}
           </button>
         ))}
+        <Link
+          href="/billets"
+          className="rounded-full bg-paper-muted px-3 py-1.5 text-sm font-bold text-ink/70 transition hover:bg-paper-muted/80"
+        >
+          Billet
+        </Link>
       </div>
 
       {error ? <p className="mt-8 text-sm text-red-700 dark:text-red-400">{error}</p> : null}

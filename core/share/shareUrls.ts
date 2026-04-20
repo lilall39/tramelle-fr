@@ -1,6 +1,6 @@
 import type { ShareContent } from "./generateShareContent";
 
-export type SharePlatform = "twitter" | "facebook" | "linkedin" | "email";
+export type SharePlatform = "twitter" | "facebook" | "linkedin" | "instagram" | "email";
 
 /** Texte + hashtags « #tag » séparés par des espaces (sans encoder ici). */
 function buildShareTextBody(content: ShareContent): string {
@@ -23,6 +23,8 @@ export function buildShareUrl(platform: SharePlatform, content: ShareContent): s
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    case "instagram":
+      return "https://www.instagram.com/";
     case "email": {
       const encodedSubject = encodeURIComponent(content.text);
       const bodyRaw = `${content.text}${content.url}`;

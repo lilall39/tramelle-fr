@@ -12,7 +12,9 @@ import { MAX_ANNONCE_PHOTOS } from "@/lib/community/submission-images";
 import { PageContainer } from "@/components/layout/page-container";
 import { firebaseErrorHint } from "@/lib/firebase/error-hint";
 
-const CATEGORIES: SubmissionCategory[] = ["annonce", "service", "vente", "don", "article"];
+type FormCategory = SubmissionCategory | "billet";
+
+const CATEGORIES: FormCategory[] = ["annonce", "service", "vente", "don", "article", "billet"];
 
 function SubmissionFilePicker({
   accept,
@@ -74,7 +76,7 @@ export function PublierForm() {
   const { user } = useAuth();
   const router = useRouter();
   const submitLock = useRef(false);
-  const [category, setCategory] = useState<SubmissionCategory>("annonce");
+  const [category, setCategory] = useState<FormCategory>("annonce");
   const [privateName, setPrivateName] = useState("");
   const [privateEmail, setPrivateEmail] = useState("");
   const [privatePhone, setPrivatePhone] = useState("");
@@ -102,9 +104,11 @@ export function PublierForm() {
   const [progress, setProgress] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const isLongTextCategory = category === "article" || category === "billet";
+
   const mainPreviewForCategory =
-    category === "article" || category === "annonce" ? null : mainFile;
-  const coverPreviewForCategory = category === "article" ? coverFile : null;
+    isLongTextCategory || category === "annonce" ? null : mainFile;
+  const coverPreviewForCategory = isLongTextCategory ? coverFile : null;
   const mainPreviewUrl = useImagePreviewUrl(mainPreviewForCategory);
   const coverPreviewUrl = useImagePreviewUrl(coverPreviewForCategory);
 
@@ -209,7 +213,7 @@ export function PublierForm() {
     let coverImage: string | null = null;
     let annonceImageUrls: string[] | null = null;
 
-    if (category === "article") {
+    if (isLongTextCategory) {
       if (coverFile) {
         dbg?.("[UPLOAD] file received", { name: coverFile.name, size: coverFile.size, type: coverFile.type });
         const v = validateSubmissionImage(coverFile);
@@ -250,7 +254,7 @@ export function PublierForm() {
 
     const base: Omit<Submission, "createdAt" | "updatedAt"> = {
       userId: uid,
-      category,
+      category: category === "billet" ? "article" : category,
       status: "pending",
       privateName: privateName.trim(),
       privateEmail: privateEmail.trim(),
@@ -292,7 +296,7 @@ export function PublierForm() {
         ...base,
         ...(Number.isFinite(p) && p >= 0 ? { price: p } : {}),
       };
-    } else if (category === "article") {
+    } else if (isLongTextCategory) {
       payload = {
         ...base,
         content: content.trim(),
@@ -364,12 +368,12 @@ export function PublierForm() {
           <select
             value={category}
             onChange={(ev) => {
-              const next = ev.target.value as SubmissionCategory;
+              const next = ev.target.value as FormCategory;
               setCategory(next);
               setMainFile(null);
               setAnnonceFiles([]);
               setCoverFile(null);
-              if (next === "article") {
+              if (next === "article" || next === "billet") {
                 setDescription("");
                 setCity("");
               }
@@ -378,7 +382,7 @@ export function PublierForm() {
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {CATEGORY_LABELS[c]}
+                {c === "billet" ? "Billet" : CATEGORY_LABELS[c]}
               </option>
             ))}
           </select>
@@ -428,7 +432,7 @@ export function PublierForm() {
             Titre
             <input required value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
           </label>
-          {category !== "article" ? (
+          {!isLongTextCategory ? (
             <>
               <label className="block text-sm font-bold text-ink">
                 Description
@@ -441,8 +445,8 @@ export function PublierForm() {
             </>
           ) : (
             <p className="text-sm text-ink/55">
-              Pas de chapô ni de lieu dans l’annonce : le texte de l’article se saisit plus bas (sous-titre optionnel et
-              corps obligatoire).
+              Pas de chapô ni de lieu dans l’annonce : le texte se saisit plus bas (sous-titre optionnel et corps
+              obligatoire).
             </p>
           )}
         </fieldset>
@@ -539,9 +543,11 @@ export function PublierForm() {
           </fieldset>
         ) : null}
 
-        {category === "article" ? (
+        {isLongTextCategory ? (
           <fieldset className="space-y-3">
-            <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">Article</legend>
+            <legend className="text-sm font-bold uppercase tracking-[0.15em] text-terracotta">
+              {category === "billet" ? "Billet" : "Article"}
+            </legend>
             <label className="block text-sm font-bold text-ink">
               Sous-titre
               <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className={inputClass} />

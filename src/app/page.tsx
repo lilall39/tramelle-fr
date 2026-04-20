@@ -4,10 +4,9 @@ import { HomeHero } from "@/components/home/home-hero";
 import { PageContainer } from "@/components/layout/page-container";
 import { ContentCard } from "@/components/ui/content-card";
 import { JsonLd } from "@/components/seo/json-ld";
-import { articles } from "@/lib/content/articles";
-import { billets } from "@/lib/content/billets";
+import type { BilletFrontMatter } from "@/lib/content/types";
 import { homeBodyProseSizeClass } from "@/lib/home-body-prose";
-import { getNonLiveEditorialSlugsServer } from "@/lib/server/editorial-pages";
+import { getPublicArticlesResolvedServer, getPublicBilletsResolvedServer } from "@/lib/server/editorial-pages";
 import { brand, getSiteUrl, siteName } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -29,7 +28,7 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
-function billetTeaser(blocks: (typeof billets)[0]["blocks"]): string {
+function billetTeaser(blocks: BilletFrontMatter["blocks"]): string {
   const first = blocks.find((b) => b.type === "p");
   if (!first || first.type !== "p") return "";
   const text = first.text;
@@ -38,19 +37,19 @@ function billetTeaser(blocks: (typeof billets)[0]["blocks"]): string {
 
 export default async function HomePage() {
   const siteUrl = getSiteUrl();
-  const [excludedArticles, excludedBillets] = await Promise.all([
-    getNonLiveEditorialSlugsServer("article"),
-    getNonLiveEditorialSlugsServer("billet"),
+  const [publicArticles, publicBillets] = await Promise.all([
+    getPublicArticlesResolvedServer(),
+    getPublicBilletsResolvedServer(),
   ]);
 
-  const articlesSorted = [...articles]
-    .filter((a) => !excludedArticles.has(a.slug))
-    .sort((x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime());
+  const articlesSorted = [...publicArticles].sort(
+    (x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime(),
+  );
   const [articleUne, ...autresArticles] = articlesSorted;
 
-  const billetsSorted = [...billets]
-    .filter((b) => !excludedBillets.has(b.slug))
-    .sort((x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime());
+  const billetsSorted = [...publicBillets].sort(
+    (x, y) => new Date(y.publishedAt).getTime() - new Date(x.publishedAt).getTime(),
+  );
 
   const jsonLd = {
     "@context": "https://schema.org",

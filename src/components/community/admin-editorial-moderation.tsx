@@ -3,7 +3,7 @@
 import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { applyEditorialModeration } from "@/lib/community/editorial-pages";
+import { applyEditorialModeration, type EditorialModerationAction } from "@/lib/community/editorial-pages";
 import { getFirebaseDb } from "@/lib/firebase/services";
 import type { EditorialKind } from "@/types/editorial-page";
 
@@ -13,7 +13,7 @@ type Item = {
   title: string;
 };
 
-type RemoteState = "live" | "hidden" | "pending";
+type RemoteState = "live" | "hidden" | "pending" | "removed";
 
 type Props = {
   items: Item[];
@@ -36,7 +36,7 @@ export function AdminEditorialModeration({ items }: Props) {
         if (
           (data.kind === "article" || data.kind === "billet") &&
           data.slug &&
-          (data.status === "hidden" || data.status === "pending")
+          (data.status === "hidden" || data.status === "pending" || data.status === "removed")
         ) {
           map[`${data.kind}:${data.slug}`] = data.status as RemoteState;
         }
@@ -59,7 +59,7 @@ export function AdminEditorialModeration({ items }: Props) {
     });
   }, [items, remote, makeKey]);
 
-  async function onAction(it: Item, action: RemoteState): Promise<void> {
+  async function onAction(it: Item, action: EditorialModerationAction): Promise<void> {
     const id = makeKey(it.kind, it.slug);
     setBusy(id);
     setError(null);
@@ -101,7 +101,7 @@ export function AdminEditorialModeration({ items }: Props) {
                 </span>
                 <h2 className="mt-1 font-editorial-serif text-lg font-bold text-ink">
                   <Link
-                    href={`/admin/editorial/${row.kind}/${row.slug}`}
+                    href={`/admin/editorial/${row.kind}/${row.slug}/edit`}
                     className="underline-offset-4 hover:text-terracotta hover:underline"
                   >
                     {row.title}
@@ -109,10 +109,16 @@ export function AdminEditorialModeration({ items }: Props) {
                 </h2>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                   <Link
-                    href={`/admin/editorial/${row.kind}/${row.slug}`}
+                    href={`/admin/editorial/${row.kind}/${row.slug}/edit`}
                     className="font-bold text-terracotta underline underline-offset-2"
                   >
-                    Lire le texte (aperçu admin)
+                    Modifier le texte
+                  </Link>
+                  <Link
+                    href={`/admin/editorial/${row.kind}/${row.slug}`}
+                    className="font-bold text-ink/75 underline underline-offset-2 hover:text-terracotta"
+                  >
+                    Aperçu lecture
                   </Link>
                   <a
                     href={`/${row.kind === "article" ? "articles" : "billets"}/${row.slug}`}
@@ -132,6 +138,7 @@ export function AdminEditorialModeration({ items }: Props) {
                     {row.state === "live" && "En ligne"}
                     {row.state === "hidden" && "Masqué (hors site)"}
                     {row.state === "pending" && "En attente de validation"}
+                    {row.state === "removed" && "Retiré du catalogue (plus d’URL publique)"}
                   </span>
                 </p>
               </div>
@@ -159,6 +166,14 @@ export function AdminEditorialModeration({ items }: Props) {
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-900 transition enabled:hover:bg-red-100 disabled:opacity-45 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
                 >
                   Masquer
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy || row.state === "removed"}
+                  onClick={() => void onAction(row, "removed")}
+                  className="rounded-lg border border-ink/[0.18] bg-paper-muted/50 px-3 py-2 text-xs font-bold text-ink transition enabled:hover:border-terracotta/45 enabled:hover:text-terracotta disabled:opacity-45"
+                >
+                  Retirer du catalogue
                 </button>
               </div>
             </li>

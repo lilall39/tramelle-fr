@@ -1,8 +1,10 @@
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { PageContainer } from "@/components/layout/page-container";
-import { getArticleBySlug } from "@/lib/content/articles";
-import { getBilletBySlug } from "@/lib/content/billets";
-import { getEditorialModerationStateServer } from "@/lib/server/editorial-pages";
+import {
+  getAdminMergedArticleServer,
+  getAdminMergedBilletServer,
+  getEditorialModerationStateServer,
+} from "@/lib/server/editorial-pages";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -22,18 +24,19 @@ function formatDate(iso: string) {
 function statusLabel(state: string) {
   if (state === "hidden") return "Masqué pour les visiteurs";
   if (state === "pending") return "En attente (hors index public)";
+  if (state === "removed") return "Retiré du catalogue (plus d’URL publique)";
   return "Visible pour tout le monde";
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { kind, slug } = await params;
   if (kind === "article") {
-    const a = getArticleBySlug(slug);
+    const a = await getAdminMergedArticleServer(slug);
     if (!a) return { title: "Introuvable" };
     return { title: `${a.title} (aperçu admin)`, robots: { index: false, follow: false } };
   }
   if (kind === "billet") {
-    const b = getBilletBySlug(slug);
+    const b = await getAdminMergedBilletServer(slug);
     if (!b) return { title: "Introuvable" };
     return { title: `${b.title} (aperçu admin)`, robots: { index: false, follow: false } };
   }
@@ -49,7 +52,7 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
   const publicPath = kind === "article" ? `/articles/${slug}` : `/billets/${slug}`;
 
   if (kind === "article") {
-    const article = getArticleBySlug(slug);
+    const article = await getAdminMergedArticleServer(slug);
     if (!article) notFound();
 
     return (
@@ -61,13 +64,20 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
             {state !== "live" ? (
               <>
                 {" "}
-                — les visiteurs ne voient pas cette adresse tant que vous ne l’avez pas remise en ligne.
+                — les visiteurs ne voient pas cette adresse tant que vous ne l’avez pas remise en ligne (sauf pour «
+                Retiré », voir liste).
               </>
             ) : null}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
             <Link href="/admin/editorial" className="font-bold text-terracotta underline underline-offset-2">
               ← Retour à la liste
+            </Link>
+            <Link
+              href={`/admin/editorial/article/${slug}/edit`}
+              className="font-bold text-terracotta underline underline-offset-2"
+            >
+              Modifier le texte en ligne
             </Link>
             <a
               href={publicPath}
@@ -79,9 +89,9 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
             </a>
           </div>
           <p className="border-t border-amber-200/80 pt-3 text-ink/75 dark:border-amber-900/40">
-            Pour <span className="font-bold">modifier les mots</span> (titre, paragraphes), il faut changer le contenu dans
-            les fichiers du site puis mettre en ligne une nouvelle version — ce n’est pas encore modifiable depuis cette
-            page seule.
+            Les changements enregistrés depuis « Modifier le texte » remplacent la version du dépôt pour les visiteurs
+            lorsque la page est publique. Les titres et listes complexes dans le corps sont représentés sous forme de
+            paragraphes après édition (voir écran d’édition).
           </p>
         </div>
 
@@ -134,7 +144,7 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
     );
   }
 
-  const billet = getBilletBySlug(slug);
+  const billet = await getAdminMergedBilletServer(slug);
   if (!billet) notFound();
 
   return (
@@ -146,13 +156,20 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
           {state !== "live" ? (
             <>
               {" "}
-              — les visiteurs ne voient pas cette adresse tant que vous ne l’avez pas remise en ligne.
+              — les visiteurs ne voient pas cette adresse tant que vous ne l’avez pas remise en ligne (sauf pour «
+              Retiré », voir liste).
             </>
           ) : null}
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
           <Link href="/admin/editorial" className="font-bold text-terracotta underline underline-offset-2">
             ← Retour à la liste
+          </Link>
+          <Link
+            href={`/admin/editorial/billet/${slug}/edit`}
+            className="font-bold text-terracotta underline underline-offset-2"
+          >
+            Modifier le texte en ligne
           </Link>
           <a
             href={publicPath}
@@ -164,9 +181,8 @@ export default async function AdminEditorialPreviewPage({ params }: Props) {
           </a>
         </div>
         <p className="border-t border-amber-200/80 pt-3 text-ink/75 dark:border-amber-900/40">
-          Pour <span className="font-bold">modifier les mots</span> (titre, paragraphes), il faut changer le contenu dans
-          les fichiers du site puis mettre en ligne une nouvelle version — ce n’est pas encore modifiable depuis cette
-          page seule.
+          Les changements enregistrés depuis « Modifier le texte » remplacent la version du dépôt pour les visiteurs
+          lorsque la page est publique.
         </p>
       </div>
 
