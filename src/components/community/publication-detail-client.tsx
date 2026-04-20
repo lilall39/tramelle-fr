@@ -231,7 +231,10 @@ export function PublicationDetailClient({ id }: Props) {
     } else {
       setInstagramNotice("Instagram s’ouvre. Si besoin, utilisez les boutons « Copier le texte » et « Copier l’image ».");
     }
-    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    const opened = window.open("https://www.instagram.com/create/select/", "_blank", "noopener,noreferrer");
+    if (!opened) {
+      window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    }
     window.setTimeout(() => setInstagramNotice(null), 12000);
   }, [shareImage, shareText]);
 

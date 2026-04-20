@@ -9,7 +9,6 @@ import { AuthLinks } from "@/components/layout/auth-links";
 const navItems = [
   { href: "/publications", label: "Publications" },
   { href: "/outils", label: "Outils" },
-  { href: "/articles", label: "Articles" },
   { href: "/billets", label: "Billets" },
 ] as const;
 

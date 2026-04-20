@@ -1,5 +1,4 @@
 import type { PublicSubmission } from "@/types/community";
-import { CATEGORY_LABELS } from "@/lib/community/labels";
 
 /** Page officielle pour créer une annonce (connexion Vinted si besoin). */
 export const VINTED_FR_NEW_LISTING_URL = "https://www.vinted.fr/items/new";
@@ -7,41 +6,35 @@ export const VINTED_FR_NEW_LISTING_URL = "https://www.vinted.fr/items/new";
 const MAX_CHARS = 4500;
 
 /**
- * Texte à coller dans la description Vinted (titre à copier séparément en premier bloc si besoin).
+ * Texte propre à coller sur Vinted (sans en-têtes techniques).
  */
 export function buildVintedDraftText(submission: PublicSubmission, canonicalPageUrl: string): string {
   const lines: string[] = [];
 
-  lines.push("— À coller dans « Titre » sur Vinted —");
   lines.push(submission.title.trim());
-  lines.push("");
-  lines.push("— À coller dans « Décrivez votre article » —");
-  lines.push("");
-  lines.push(`Catégorie sur Tramelle : ${CATEGORY_LABELS[submission.category]}.`);
+  const details: string[] = [];
 
   const city = submission.city?.trim();
-  if (city) lines.push(`Lieu : ${city}.`);
+  if (city) details.push(`Lieu : ${city}`);
 
   if (submission.category === "vente" || submission.category === "annonce") {
-    if (submission.price != null) lines.push(`Prix affiché sur Tramelle : ${submission.price} €.`);
+    if (submission.price != null) details.push(`Prix : ${submission.price} €`);
   }
   if (submission.category === "service" && submission.rate?.trim()) {
-    lines.push(`Tarif / conditions : ${submission.rate.trim()}.`);
+    details.push(`Tarif : ${submission.rate.trim()}`);
   }
   if (submission.category === "don") {
-    if (submission.availability?.trim()) lines.push(`Disponibilité : ${submission.availability.trim()}.`);
-    if (submission.pickupInfo?.trim()) lines.push(`Retrait : ${submission.pickupInfo.trim()}.`);
+    if (submission.availability?.trim()) details.push(`Disponibilité : ${submission.availability.trim()}`);
+    if (submission.pickupInfo?.trim()) details.push(`Retrait : ${submission.pickupInfo.trim()}`);
   }
   if (submission.category === "vente") {
-    if (submission.condition?.trim()) lines.push(`État : ${submission.condition.trim()}.`);
-    if (submission.deliveryMode?.trim()) lines.push(`Remise / envoi : ${submission.deliveryMode.trim()}.`);
+    if (submission.condition?.trim()) details.push(`État : ${submission.condition.trim()}`);
+    if (submission.deliveryMode?.trim()) details.push(`Remise / envoi : ${submission.deliveryMode.trim()}`);
   }
   if (submission.category === "service") {
-    if (submission.serviceArea?.trim()) lines.push(`Zone : ${submission.serviceArea.trim()}.`);
-    if (submission.serviceMode?.trim()) lines.push(`Modalités : ${submission.serviceMode.trim()}.`);
+    if (submission.serviceArea?.trim()) details.push(`Zone : ${submission.serviceArea.trim()}`);
+    if (submission.serviceMode?.trim()) details.push(`Modalités : ${submission.serviceMode.trim()}`);
   }
-
-  lines.push("");
 
   let mainText = "";
   if (submission.category === "article") {
@@ -53,17 +46,29 @@ export function buildVintedDraftText(submission: PublicSubmission, canonicalPage
     mainText = submission.description?.trim() ?? "";
   }
 
-  if (!mainText) mainText = "(Complétez avec vos détails ; voir aussi la page Tramelle ci-dessous.)";
-  lines.push(mainText);
+  if (mainText) {
+    lines.push("");
+    lines.push(mainText);
+  }
+
+  if (details.length > 0) {
+    lines.push("");
+    lines.push(details.join(" · "));
+  }
 
   lines.push("");
   lines.push(`Lien annonce Tramelle : ${canonicalPageUrl}`);
-  lines.push("");
-  lines.push(
-    "Sur Vinted : ajoutez vos photos, choisissez la catégorie et la marque adaptées à l’article, puis collez ce texte dans la description et adaptez si besoin.",
-  );
 
   let out = lines.join("\n");
+  // Filet de sécurité : retire d'anciens en-têtes si une vieille version revient via cache.
+  out = out
+    .replace(/— À coller dans « Titre » sur Vinted —\s*/g, "")
+    .replace(/— À coller dans « Décrivez votre article » —\s*/g, "")
+    .replace(/Catégorie sur Tramelle :[^\n]*\n?/g, "")
+    .replace(/Sur Vinted : ajoutez vos photos[^\n]*\n?/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
   if (out.length > MAX_CHARS) {
     out = out.slice(0, MAX_CHARS - 1).trimEnd() + "…";
   }
