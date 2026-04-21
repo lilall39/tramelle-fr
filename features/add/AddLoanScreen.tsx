@@ -263,11 +263,18 @@ export function AddLoanScreen() {
             />
           </View>
           {!canSubmit ? (
-            <Text className="mt-4 text-center text-[13px] text-zinc-500 dark:text-muted">
-              {mock || !isSupabaseConfigured()
-                ? 'Connexion Supabase requise pour enregistrer.'
-                : 'Connectez-vous pour enregistrer.'}
-            </Text>
+            <View className="mt-4 items-center gap-2">
+              <Text className="text-center text-[13px] text-zinc-500 dark:text-muted">
+                {mock || !isSupabaseConfigured()
+                  ? 'Connexion Supabase requise pour enregistrer.'
+                  : 'Connectez-vous pour enregistrer.'}
+              </Text>
+              {!mock && isSupabaseConfigured() && !user?.id ? (
+                <Pressable accessibilityRole="button" onPress={() => router.push('/auth')}>
+                  <Text className="text-[14px] font-semibold text-gold">Se connecter</Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
           {createLoan.isPending ? (
             <ActivityIndicator className="mt-4" color="#A17E45" />

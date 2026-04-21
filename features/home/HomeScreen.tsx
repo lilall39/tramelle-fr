@@ -35,6 +35,22 @@ const isDevBypassAuth = typeof __DEV__ !== 'undefined' && __DEV__;
 
 const STAT_COUNT = 3;
 
+function loansLoadErrorText(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    if (error.message.toLowerCase().includes('failed to fetch')) {
+      return "Connexion à la base indisponible. Vérifiez que l'adresse Supabase et la clé publique sont bien actives sur le déploiement.";
+    }
+    return error.message;
+  }
+  if (error && typeof error === 'object') {
+    const maybe = error as { message?: unknown };
+    if (typeof maybe.message === 'string' && maybe.message.trim()) {
+      return maybe.message;
+    }
+  }
+  return 'Impossible de charger vos prêts.';
+}
+
 export function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -158,7 +174,7 @@ export function HomeScreen() {
           <View className={`flex-1 ${horizontalClass} pt-5`}>
             <HomeHeader firstName={displayFirstName} onAccountPress={() => router.push('/auth')} />
             <ErrorRetry
-              message={loansQuery.error instanceof Error ? loansQuery.error.message : 'Impossible de charger vos prêts.'}
+              message={loansLoadErrorText(loansQuery.error)}
               onRetry={() => void loansQuery.refetch()}
             />
           </View>
