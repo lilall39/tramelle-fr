@@ -1,0 +1,313 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { SegmentPair } from '@/components/ui/SegmentPair';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { useAuthSession } from '@/hooks/useAuthSession';
+import { useLoanById } from '@/hooks/useLoanById';
+import { useUpdateLoan } from '@/hooks/useLoanMutations';
+import { isDevMockLoansMode } from '@/services/devLoansMock';
+import { isSupabaseConfigured } from '@/services/supabase';
+import type { LoanKind, LoanMode } from '@/types/loan';
+import { formatShortDate } from '@/utils/format';
+import { normalizeLoanKind } from '@/utils/loanDisplay';
+import { parseMoneyInput, parseOptionalMoneyInput, validateCreateLoanDraft } from '@/utils/validators';
+
+function isValidIsoDate(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s.trim());
+}
+
+function formatNumForInput(n: number): string {
+  return String(n).replace('.', ',');
+}
+
+export function LoanEditScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuthSession();
+  const { loan, isLoading, isError } = useLoanById(typeof id === 'string' ? id : undefined);
+  const updateLoan = useUpdateLoan();
+
+  const [mode, setMode] = useState<LoanMode>('lent');
+  const [loanKind, setLoanKind] = useState<LoanKind>('object');
+  const [personName, setPersonName] = useState('');
+  const [itemName, setItemName] = useState('');
+  const [amountInput, setAmountInput] = useState('');
+  const [itemValueInput, setItemValueInput] = useState('');
+  const [loanDateIso, setLoanDateIso] = useState('');
+  const [expectedReturnIso, setExpectedReturnIso] = useState('');
+  const [note, setNote] = useState('');
+  const [hydrated, setHydrated] = useState(false);
+
+  const mock = isDevMockLoansMode();
+  const canSubmit = Boolean(user?.id && isSupabaseConfigured() && !mock);
+
+  useEffect(() => {
+    if (!loan) {
+      return;
+    }
+    setMode(loan.mode);
+    setLoanKind(normalizeLoanKind(loan));
+    setPersonName(loan.person_name);
+    setItemName(loan.item_name ?? '');
+    setAmountInput(loan.amount != null && !Number.isNaN(Number(loan.amount)) ? formatNumForInput(Number(loan.amount)) : '');
+    setItemValueInput(
+      loan.item_value != null && !Number.isNaN(Number(loan.item_value)) ? formatNumForInput(Number(loan.item_value)) : '',
+    );
+    setLoanDateIso(loan.loan_date?.slice(0, 10) ?? loan.created_at?.slice(0, 10) ?? '');
+    setExpectedReturnIso(loan.expected_return_date?.slice(0, 10) ?? '');
+    setNote(loan.note ?? '');
+    setHydrated(true);
+  }, [loan]);
+
+  const onSubmit = async () => {
+    if (!canSubmit || !user?.id || !loan) {
+      Alert.alert('Indisponible', 'Connectez-vous avec une base Supabase pour enregistrer.');
+      return;
+    }
+
+    const draft = validateCreateLoanDraft({
+      loan_kind: loanKind,
+      person_name: personName,
+      item_name: itemName,
+      amountInput,
+      item_valueInput: itemValueInput,
+    });
+    if (!draft.ok) {
+      Alert.alert('Champs manquants', draft.message);
+      return;
+    }
+
+    if (!isValidIsoDate(loanDateIso)) {
+      Alert.alert('Date du prêt', 'Utilisez le format AAAA-MM-JJ.');
+      return;
+    }
+    if (expectedReturnIso.trim() && !isValidIsoDate(expectedReturnIso.trim())) {
+      Alert.alert('Retour prévu', 'Utilisez le format AAAA-MM-JJ ou laissez vide.');
+      return;
+    }
+
+    if (loanKind === 'object') {
+      const iv = parseOptionalMoneyInput(itemValueInput);
+      if (iv !== null && iv < 0) {
+        Alert.alert('Valeur', 'La valeur estimée doit être positive.');
+        return;
+      }
+    }
+
+    try {
+      const rawItemVal = parseOptionalMoneyInput(itemValueInput);
+      const itemVal =
+        loanKind === 'object' && rawItemVal !== null && rawItemVal > 0 ? rawItemVal : null;
+
+      await updateLoan.mutateAsync({
+        loanId: loan.id,
+        userId: user.id,
+        payload: {
+          mode,
+          loan_kind: loanKind,
+          person_name: personName.trim(),
+          item_name: loanKind === 'object' ? itemName.trim() : null,
+          amount: loanKind === 'money' ? parseMoneyInput(amountInput)! : null,
+          item_value: loanKind === 'object' ? itemVal : null,
+          loan_date: loanDateIso.trim(),
+          expected_return_date: expectedReturnIso.trim() ? expectedReturnIso.trim() : null,
+          note: note.trim() || null,
+          status: loan.status,
+        },
+      });
+      router.back();
+    } catch (e) {
+      Alert.alert('Erreur', e instanceof Error ? e.message : 'Enregistrement impossible.');
+    }
+  };
+
+  if (isLoading || !hydrated) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-stone-50 dark:bg-background" edges={['top']}>
+        <ActivityIndicator color="#A17E45" />
+      </SafeAreaView>
+    );
+  }
+
+  if (isError || !loan) {
+    return (
+      <SafeAreaView className="flex-1 bg-stone-50 px-5 dark:bg-background" edges={['top', 'left', 'right']}>
+        <Pressable accessibilityRole="button" onPress={() => router.back()} className="mt-2 py-3">
+          <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Retour</Text>
+        </Pressable>
+        <Text className="mt-8 text-center text-base text-zinc-600 dark:text-muted">Prêt introuvable.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const loanDatePreview = isValidIsoDate(loanDateIso) ? formatShortDate(loanDateIso) : '—';
+  const returnPreview =
+    expectedReturnIso.trim() && isValidIsoDate(expectedReturnIso.trim()) ? formatShortDate(expectedReturnIso.trim()) : null;
+
+  return (
+    <SafeAreaView className="flex-1 bg-stone-50 dark:bg-background" edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+        <View className="flex-row items-center justify-between px-5 pb-2 pt-2">
+          <Pressable accessibilityRole="button" onPress={() => router.back()} hitSlop={12}>
+            <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Annuler</Text>
+          </Pressable>
+          <Text className="text-[17px] font-semibold text-zinc-950 dark:text-foreground">Modifier le prêt</Text>
+          <View className="w-14" />
+        </View>
+
+        <ScrollView
+          className="flex-1 px-5"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text className="mt-2 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Type
+          </Text>
+          <View className="mt-2">
+            <SegmentPair<LoanKind>
+              left={{ key: 'object', label: 'Objet' }}
+              right={{ key: 'money', label: 'Argent' }}
+              value={loanKind}
+              onChange={setLoanKind}
+            />
+          </View>
+
+          <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Sens
+          </Text>
+          <View className="mt-2">
+            <SegmentPair<LoanMode>
+              left={{ key: 'lent', label: 'Je prête' }}
+              right={{ key: 'borrowed', label: "J'emprunte" }}
+              value={mode}
+              onChange={setMode}
+            />
+          </View>
+
+          <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Personne
+          </Text>
+          <TextInput
+            value={personName}
+            onChangeText={setPersonName}
+            placeholder="Nom ou pseudo"
+            placeholderTextColor="#a1a1aa"
+            autoCapitalize="words"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
+          {loanKind === 'object' ? (
+            <>
+              <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Libellé
+              </Text>
+              <TextInput
+                value={itemName}
+                onChangeText={setItemName}
+                placeholder="Ex. Appareil photo, livre…"
+                placeholderTextColor="#a1a1aa"
+                className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+              />
+              <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Valeur estimée (optionnel)
+              </Text>
+              <TextInput
+                value={itemValueInput}
+                onChangeText={setItemValueInput}
+                placeholder="€"
+                placeholderTextColor="#a1a1aa"
+                keyboardType="decimal-pad"
+                className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+              />
+            </>
+          ) : (
+            <>
+              <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Montant (€)
+              </Text>
+              <TextInput
+                value={amountInput}
+                onChangeText={setAmountInput}
+                placeholder="0,00"
+                placeholderTextColor="#a1a1aa"
+                keyboardType="decimal-pad"
+                className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+              />
+            </>
+          )}
+
+          <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Date du prêt
+          </Text>
+          <TextInput
+            value={loanDateIso}
+            onChangeText={setLoanDateIso}
+            placeholder="AAAA-MM-JJ"
+            placeholderTextColor="#a1a1aa"
+            autoCapitalize="none"
+            autoCorrect={false}
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 font-mono text-[15px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+          <Text className="mt-1.5 text-[13px] text-zinc-500 dark:text-muted">{loanDatePreview}</Text>
+
+          <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Retour prévu (optionnel)
+          </Text>
+          <TextInput
+            value={expectedReturnIso}
+            onChangeText={setExpectedReturnIso}
+            placeholder="AAAA-MM-JJ"
+            placeholderTextColor="#a1a1aa"
+            autoCapitalize="none"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 font-mono text-[15px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+          {returnPreview ? (
+            <Text className="mt-1.5 text-[13px] text-zinc-500 dark:text-muted">{returnPreview}</Text>
+          ) : null}
+
+          <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Note (optionnel)
+          </Text>
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            placeholder="Rappel personnel…"
+            placeholderTextColor="#a1a1aa"
+            multiline
+            className="mt-2 min-h-[88px] rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
+          <View className="mt-10">
+            <PrimaryButton
+              label="Enregistrer les modifications"
+              disabled={!canSubmit || updateLoan.isPending}
+              onPress={() => void onSubmit()}
+            />
+          </View>
+          {!canSubmit ? (
+            <Text className="mt-4 text-center text-[13px] text-zinc-500 dark:text-muted">
+              {mock || !isSupabaseConfigured()
+                ? 'Connexion Supabase requise pour enregistrer.'
+                : 'Connectez-vous pour enregistrer.'}
+            </Text>
+          ) : null}
+          {updateLoan.isPending ? <ActivityIndicator className="mt-4" color="#A17E45" /> : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
