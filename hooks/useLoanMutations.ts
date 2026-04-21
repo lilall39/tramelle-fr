@@ -63,6 +63,8 @@ export function useUpdateLoan() {
           mode: payload.mode,
           loan_kind: payload.loan_kind,
           person_name: payload.person_name,
+          person_email: payload.person_email,
+          person_phone: payload.person_phone,
           item_name: payload.item_name,
           amount: payload.amount,
           item_value: payload.item_value,

@@ -43,6 +43,8 @@ export function LoanEditScreen() {
   const [mode, setMode] = useState<LoanMode>('lent');
   const [loanKind, setLoanKind] = useState<LoanKind>('object');
   const [personName, setPersonName] = useState('');
+  const [personEmail, setPersonEmail] = useState('');
+  const [personPhone, setPersonPhone] = useState('');
   const [itemName, setItemName] = useState('');
   const [amountInput, setAmountInput] = useState('');
   const [itemValueInput, setItemValueInput] = useState('');
@@ -61,6 +63,8 @@ export function LoanEditScreen() {
     setMode(loan.mode);
     setLoanKind(normalizeLoanKind(loan));
     setPersonName(loan.person_name);
+    setPersonEmail(loan.person_email ?? '');
+    setPersonPhone(loan.person_phone ?? '');
     setItemName(loan.item_name ?? '');
     setAmountInput(loan.amount != null && !Number.isNaN(Number(loan.amount)) ? formatNumForInput(Number(loan.amount)) : '');
     setItemValueInput(
@@ -119,6 +123,8 @@ export function LoanEditScreen() {
           mode,
           loan_kind: loanKind,
           person_name: personName.trim(),
+          person_email: personEmail.trim() ? personEmail.trim().toLowerCase() : null,
+          person_phone: personPhone.trim() ? personPhone.trim() : null,
           item_name: loanKind === 'object' ? itemName.trim() : null,
           amount: loanKind === 'money' ? parseMoneyInput(amountInput)! : null,
           item_value: loanKind === 'object' ? itemVal : null,
@@ -145,8 +151,13 @@ export function LoanEditScreen() {
   if (isError || !loan) {
     return (
       <SafeAreaView className="flex-1 bg-stone-50 px-5 dark:bg-background" edges={['top', 'left', 'right']}>
-        <Pressable accessibilityRole="button" onPress={() => router.back()} className="mt-2 py-3">
-          <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Retour</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          className="mt-2 inline-flex flex-row items-center gap-1 self-start rounded-full bg-stone-200/80 px-3 py-2 dark:bg-zinc-800"
+        >
+          <Text className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-100">‹</Text>
+          <Text className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100">Retour</Text>
         </Pressable>
         <Text className="mt-8 text-center text-base text-zinc-600 dark:text-muted">Prêt introuvable.</Text>
       </SafeAreaView>
@@ -161,8 +172,14 @@ export function LoanEditScreen() {
     <SafeAreaView className="flex-1 bg-stone-50 dark:bg-background" edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <View className="flex-row items-center justify-between px-5 pb-2 pt-2">
-          <Pressable accessibilityRole="button" onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Annuler</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            hitSlop={12}
+            className="flex-row items-center gap-1 rounded-full bg-stone-200/80 px-3 py-2 dark:bg-zinc-800"
+          >
+            <Text className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-100">‹</Text>
+            <Text className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100">Retour</Text>
           </Pressable>
           <Text className="text-[17px] font-semibold text-zinc-950 dark:text-foreground">Modifier le prêt</Text>
           <View className="w-14" />
@@ -207,6 +224,31 @@ export function LoanEditScreen() {
             placeholder="Nom ou pseudo"
             placeholderTextColor="#a1a1aa"
             autoCapitalize="words"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
+          <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Email (optionnel)
+          </Text>
+          <TextInput
+            value={personEmail}
+            onChangeText={setPersonEmail}
+            placeholder="exemple@email.com"
+            placeholderTextColor="#a1a1aa"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
+          <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Téléphone (optionnel)
+          </Text>
+          <TextInput
+            value={personPhone}
+            onChangeText={setPersonPhone}
+            placeholder="+33..."
+            placeholderTextColor="#a1a1aa"
+            keyboardType="phone-pad"
             className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
           />
 

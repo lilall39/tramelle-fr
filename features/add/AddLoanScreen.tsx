@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Calendar } from 'react-native-calendars';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,7 +22,6 @@ import { useCreateLoan } from '@/hooks/useCreateLoan';
 import { isDevMockLoansMode } from '@/services/devLoansMock';
 import { isSupabaseConfigured } from '@/services/supabase';
 import type { LoanKind, LoanMode } from '@/types/loan';
-import { formatShortDate } from '@/utils/format';
 import { todayIsoDateLocal } from '@/utils/loanDisplay';
 import { parseMoneyInput, parseOptionalMoneyInput, validateCreateLoanDraft } from '@/utils/validators';
 
@@ -36,12 +37,15 @@ export function AddLoanScreen() {
   const [mode, setMode] = useState<LoanMode>('lent');
   const [loanKind, setLoanKind] = useState<LoanKind>('object');
   const [personName, setPersonName] = useState('');
+  const [personEmail, setPersonEmail] = useState('');
+  const [personPhone, setPersonPhone] = useState('');
   const [itemName, setItemName] = useState('');
   const [amountInput, setAmountInput] = useState('');
   const [itemValueInput, setItemValueInput] = useState('');
   const [loanDateIso, setLoanDateIso] = useState(todayIsoDateLocal());
   const [expectedReturnIso, setExpectedReturnIso] = useState('');
   const [note, setNote] = useState('');
+  const [activeDateField, setActiveDateField] = useState<'loan' | 'return' | null>(null);
 
   const mock = isDevMockLoansMode();
   const canSubmit = Boolean(user?.id && isSupabaseConfigured() && !mock);
@@ -96,6 +100,8 @@ export function AddLoanScreen() {
           mode,
           loan_kind: loanKind,
           person_name: personName.trim(),
+          person_email: personEmail.trim() ? personEmail.trim().toLowerCase() : null,
+          person_phone: personPhone.trim() ? personPhone.trim() : null,
           item_name: loanKind === 'object' ? itemName.trim() : null,
           amount: loanKind === 'money' ? parseMoneyInput(amountInput)! : null,
           item_value: loanKind === 'object' ? itemVal : null,
@@ -112,10 +118,6 @@ export function AddLoanScreen() {
     }
   };
 
-  const loanDatePreview = isValidIsoDate(loanDateIso) ? formatShortDate(loanDateIso) : '—';
-  const returnPreview =
-    expectedReturnIso.trim() && isValidIsoDate(expectedReturnIso.trim()) ? formatShortDate(expectedReturnIso.trim()) : null;
-
   return (
     <SafeAreaView className="flex-1 bg-stone-50 dark:bg-background" edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
@@ -123,8 +125,14 @@ export function AddLoanScreen() {
         className="flex-1"
       >
         <View className="flex-row items-center justify-between px-5 pb-2 pt-2">
-          <Pressable accessibilityRole="button" onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Retour</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            hitSlop={12}
+            className="flex-row items-center gap-1 rounded-full bg-stone-200/80 px-3 py-2 dark:bg-zinc-800"
+          >
+            <Text className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-100">‹</Text>
+            <Text className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100">Retour</Text>
           </Pressable>
           <Text className="text-[17px] font-semibold text-zinc-950 dark:text-foreground">Nouveau prêt</Text>
           <Pressable accessibilityRole="button" onPress={() => router.push('/auth')} hitSlop={10}>
@@ -174,6 +182,31 @@ export function AddLoanScreen() {
             className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
           />
 
+          <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Email (optionnel)
+          </Text>
+          <TextInput
+            value={personEmail}
+            onChangeText={setPersonEmail}
+            placeholder="exemple@email.com"
+            placeholderTextColor="#a1a1aa"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
+          <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Téléphone (optionnel)
+          </Text>
+          <TextInput
+            value={personPhone}
+            onChangeText={setPersonPhone}
+            placeholder="+33..."
+            placeholderTextColor="#a1a1aa"
+            keyboardType="phone-pad"
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-[16px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
+          />
+
           {loanKind === 'object' ? (
             <>
               <Text className="mt-5 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
@@ -217,30 +250,30 @@ export function AddLoanScreen() {
           <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             Date du prêt
           </Text>
-          <TextInput
-            value={loanDateIso}
-            onChangeText={setLoanDateIso}
-            placeholder="AAAA-MM-JJ"
-            placeholderTextColor="#a1a1aa"
-            autoCapitalize="none"
-            autoCorrect={false}
-            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 font-mono text-[15px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
-          />
-          <Text className="mt-1.5 text-[13px] text-zinc-500 dark:text-muted">{loanDatePreview}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setActiveDateField('loan')}
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <Text className="font-mono text-[15px] text-zinc-950 dark:text-foreground">{loanDateIso}</Text>
+          </Pressable>
 
           <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             Retour prévu (optionnel)
           </Text>
-          <TextInput
-            value={expectedReturnIso}
-            onChangeText={setExpectedReturnIso}
-            placeholder="AAAA-MM-JJ"
-            placeholderTextColor="#a1a1aa"
-            autoCapitalize="none"
-            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 font-mono text-[15px] text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900 dark:text-foreground"
-          />
-          {returnPreview ? (
-            <Text className="mt-1.5 text-[13px] text-zinc-500 dark:text-muted">{returnPreview}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setActiveDateField('return')}
+            className="mt-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <Text className="font-mono text-[15px] text-zinc-950 dark:text-foreground">
+              {expectedReturnIso || 'Aucune date'}
+            </Text>
+          </Pressable>
+          {expectedReturnIso ? (
+            <Pressable accessibilityRole="button" onPress={() => setExpectedReturnIso('')} className="mt-2 self-start">
+              <Text className="text-[13px] font-medium text-zinc-500 dark:text-muted">Effacer la date de retour</Text>
+            </Pressable>
           ) : null}
 
           <Text className="mt-6 text-[13px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
@@ -281,6 +314,39 @@ export function AddLoanScreen() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={activeDateField !== null} transparent animationType="fade" onRequestClose={() => setActiveDateField(null)}>
+        <Pressable className="flex-1 items-center justify-center bg-black/35 px-4" onPress={() => setActiveDateField(null)}>
+          <Pressable
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900"
+            onPress={() => {}}
+          >
+            <Text className="mb-2 text-center text-[15px] font-semibold text-zinc-900 dark:text-foreground">
+              {activeDateField === 'loan' ? 'Choisir la date du prêt' : 'Choisir la date de retour'}
+            </Text>
+            <Calendar
+              current={activeDateField === 'loan' ? loanDateIso : expectedReturnIso || loanDateIso}
+              markedDates={{
+                [(activeDateField === 'loan' ? loanDateIso : expectedReturnIso || loanDateIso)]: {
+                  selected: true,
+                  selectedColor: '#A17E45',
+                },
+              }}
+              onDayPress={(day) => {
+                if (activeDateField === 'loan') {
+                  setLoanDateIso(day.dateString);
+                } else {
+                  setExpectedReturnIso(day.dateString);
+                }
+                setActiveDateField(null);
+              }}
+            />
+            <Pressable accessibilityRole="button" onPress={() => setActiveDateField(null)} className="mt-2 self-end px-3 py-2">
+              <Text className="text-[14px] font-semibold text-gold">Fermer</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

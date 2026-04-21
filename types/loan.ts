@@ -9,6 +9,8 @@ export type LoanRow = {
   mode: LoanMode;
   loan_kind: LoanKind;
   person_name: string;
+  person_email: string | null;
+  person_phone: string | null;
   /** Objet : libellé ; Argent : souvent null côté UI. */
   item_name: string | null;
   /** Montant du prêt en euros (réservé au type Argent). */
@@ -37,6 +39,8 @@ export type CreateLoanPayload = {
   mode: LoanMode;
   loan_kind: LoanKind;
   person_name: string;
+  person_email: string | null;
+  person_phone: string | null;
   item_name: string | null;
   amount: number | null;
   item_value: number | null;

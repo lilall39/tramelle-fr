@@ -19,6 +19,14 @@ function messageFromUnknown(e: unknown): string {
   return 'Une erreur inattendue est survenue.';
 }
 
+function friendlyAuthError(e: unknown): string {
+  const raw = messageFromUnknown(e);
+  if (raw.toLowerCase().includes('failed to fetch')) {
+    return "Connexion bloquée entre votre navigateur et Supabase. Désactivez VPN/bloqueur de pub, puis réessayez en navigation privée.";
+  }
+  return raw;
+}
+
 export default function AuthScreen() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuthSession();
@@ -63,7 +71,7 @@ export default function AuthScreen() {
       }
       router.replace('/');
     } catch (e) {
-      setFormNotice({ variant: 'error', text: messageFromUnknown(e) });
+      setFormNotice({ variant: 'error', text: friendlyAuthError(e) });
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +103,10 @@ export default function AuthScreen() {
       }
 
       if (data?.session) {
-        router.replace('/');
+        setFormNotice({ variant: 'success', text: 'Compte créé avec succès. Connexion effectuée.' });
+        setTimeout(() => {
+          router.replace('/');
+        }, 900);
         return;
       }
 
@@ -105,7 +116,7 @@ export default function AuthScreen() {
           'Compte créé. Si vous recevez un email de confirmation, ouvrez le lien puis utilisez « Se connecter ». Sinon, essayez « Se connecter » maintenant.',
       });
     } catch (e) {
-      setFormNotice({ variant: 'error', text: messageFromUnknown(e) });
+      setFormNotice({ variant: 'error', text: friendlyAuthError(e) });
     } finally {
       setIsSubmitting(false);
     }
@@ -147,6 +158,9 @@ export default function AuthScreen() {
         <View className="flex-1 justify-center px-6">
           <Text className="text-center text-2xl font-semibold text-zinc-950 dark:text-foreground">Compte</Text>
           <Text className="mt-2 text-center text-sm text-zinc-600 dark:text-muted">Vous êtes connecté·e.</Text>
+          <Text className="mt-2 text-center text-sm text-zinc-600 dark:text-muted">
+            Vous êtes déjà connecté·e avec ce compte. Déconnectez-vous pour changer d'adresse email.
+          </Text>
           <Text className="mt-6 text-center text-base font-medium text-zinc-900 dark:text-foreground">
             {user.email ?? 'Compte actif'}
           </Text>

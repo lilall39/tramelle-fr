@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  Linking,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -33,6 +34,72 @@ import {
 function buildReminderBody(loan: LoanRow): string {
   const label = loanPrimaryLabel(loan);
   return `Bonjour,\n\nJe me permets de vous relancer concernant : ${label}.\n\nMerci de votre retour.`;
+}
+
+function normalizePhone(raw: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.startsWith('+')) {
+    return `+${v.slice(1).replace(/[^\d]/g, '')}`;
+  }
+  return v.replace(/[^\d]/g, '');
+}
+
+async function openExternalLink(url: string, errorTitle: string): Promise<void> {
+  try {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      await Linking.openURL(url);
+      return;
+    }
+    const ok = await Linking.canOpenURL(url);
+    if (!ok) {
+      Alert.alert(errorTitle, "Impossible d'ouvrir cette application sur cet appareil.");
+      return;
+    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(errorTitle, "Impossible d'ouvrir cette application pour le moment.");
+  }
+}
+
+async function forceOpenWhatsApp(message: string, phoneRaw: string | null): Promise<void> {
+  const phone = normalizePhone(phoneRaw);
+  const text = encodeURIComponent(message);
+  const compactPhone = (phone ?? '').replace(/^\+/, '');
+
+  const candidates = compactPhone
+    ? [
+        `whatsapp://send?phone=${compactPhone}&text=${text}`,
+        `whatsapp://send?text=${text}`,
+        `https://wa.me/${compactPhone}?text=${text}`,
+        `https://api.whatsapp.com/send?phone=${compactPhone}&text=${text}`,
+        `https://wa.me/?text=${text}`,
+        `https://api.whatsapp.com/send?text=${text}`,
+      ]
+    : [
+        `whatsapp://send?text=${text}`,
+        `https://wa.me/?text=${text}`,
+        `https://api.whatsapp.com/send?text=${text}`,
+      ];
+
+  for (const url of candidates) {
+    try {
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        await Linking.openURL(url);
+        return;
+      }
+      const ok = await Linking.canOpenURL(url);
+      if (ok) {
+        await Linking.openURL(url);
+        return;
+      }
+    } catch {
+      // essaie le candidat suivant
+    }
+  }
+
+  Alert.alert('WhatsApp', "Impossible d'ouvrir WhatsApp sur cet appareil.");
 }
 
 function InfoCard({ label, children }: { label: string; children: ReactNode }) {
@@ -132,8 +199,13 @@ export function LoanDetailScreen() {
   if (isError || !loan) {
     return (
       <SafeAreaView className="flex-1 bg-stone-50 px-5 dark:bg-background" edges={['top', 'left', 'right']}>
-        <Pressable accessibilityRole="button" onPress={() => router.back()} className="mt-2 py-3">
-          <Text className="text-[15px] font-medium text-zinc-600 dark:text-muted">Retour</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          className="mt-2 inline-flex flex-row items-center gap-1 self-start rounded-full bg-stone-200/80 px-3 py-2 dark:bg-zinc-800"
+        >
+          <Text className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-100">‹</Text>
+          <Text className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100">Retour</Text>
         </Pressable>
         <Text className="mt-8 text-center text-base text-zinc-600 dark:text-muted">Prêt introuvable.</Text>
       </SafeAreaView>
@@ -161,9 +233,10 @@ export function LoanDetailScreen() {
           accessibilityLabel="Retour"
           onPress={() => router.back()}
           hitSlop={14}
-          className="py-2 pr-4"
+          className="flex-row items-center gap-1 rounded-full bg-stone-200/80 px-3 py-2 dark:bg-zinc-800"
         >
-          <Text className="text-[22px] font-light text-zinc-500 dark:text-zinc-400">‹</Text>
+          <Text className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-100">‹</Text>
+          <Text className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100">Retour</Text>
         </Pressable>
       </View>
 
@@ -228,6 +301,20 @@ export function LoanDetailScreen() {
               </View>
             </InfoCard>
           </View>
+          <View className={tileHalf}>
+            <InfoCard label="Email contact">
+              <Text className="text-[15px] font-semibold text-zinc-950 dark:text-foreground">
+                {loan.person_email?.trim() || '—'}
+              </Text>
+            </InfoCard>
+          </View>
+          <View className={tileHalf}>
+            <InfoCard label="Téléphone contact">
+              <Text className="text-[15px] font-semibold text-zinc-950 dark:text-foreground">
+                {loan.person_phone?.trim() || '—'}
+              </Text>
+            </InfoCard>
+          </View>
         </View>
 
         {loan.note?.trim() ? (
@@ -246,6 +333,57 @@ export function LoanDetailScreen() {
             onClose={() => setRelanceOpen(false)}
             message={buildReminderBody(loan)}
           />
+
+          <View className="flex-row flex-wrap gap-2">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                if (!loan.person_email?.trim()) {
+                  Alert.alert('Email manquant', "Ajoutez l'email de la personne pour relancer par email.");
+                  return;
+                }
+                void openExternalLink(
+                  `mailto:${encodeURIComponent(loan.person_email)}?subject=${encodeURIComponent('Relance prêt')}&body=${encodeURIComponent(buildReminderBody(loan))}`,
+                  'Email',
+                );
+              }}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <Text className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Email</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                void forceOpenWhatsApp(buildReminderBody(loan), loan.person_phone);
+              }}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <Text className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">WhatsApp</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                const text = buildReminderBody(loan);
+                const appUrl = `tg://msg?text=${encodeURIComponent(text)}`;
+                const webUrl = `https://t.me/share/url?url=${encodeURIComponent('https://rendsca-app.vercel.app')}&text=${encodeURIComponent(text)}`;
+                void (async () => {
+                  try {
+                    const ok = await Linking.canOpenURL(appUrl);
+                    if (ok) {
+                      await Linking.openURL(appUrl);
+                      return;
+                    }
+                  } catch {
+                    // fallback web
+                  }
+                  await openExternalLink(webUrl, 'Telegram');
+                })();
+              }}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <Text className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Telegram</Text>
+            </Pressable>
+          </View>
 
           {loan.status === 'open' ? (
             <View className="flex-row gap-3">
